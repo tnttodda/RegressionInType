@@ -48,7 +48,7 @@ S⟨ _ , 𝓔S ⟩ p d ϕ = pr₂ (𝓔S p d ϕ)
 𝓔S-dec {𝓤} {𝓥} {X} c 𝓔S p d ϕ
  = Cases (d x₀)
      (λ  px₀ → inl (x₀ , px₀)) 
-     (λ ¬px₀ → inr λ x ¬px → ¬px₀ (γ₀ (x , ¬px)))
+     (λ ¬px₀ → inr λ x px → ¬px₀ (γ₀ (x , px)))
  where
   x₀ : X
   x₀ = pr₁ (𝓔S p d ϕ)
