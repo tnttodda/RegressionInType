@@ -1,4 +1,4 @@
-{-# OPTIONS --without-K --exact-split --safe #-}
+{-# OPTIONS --without-K --exact-split --allow-unsolved-metas #-}
 
 open import Prelude
 open import NaturalsOrder
@@ -76,6 +76,62 @@ increase-distance {𝓤} {X} d xs ys m m≼cxsys x n n<sm
    γ (succ n) x (succ k) k≤n
      = codistance-conceptually₂ X d xs ys n (m≼cxsys n x) k k≤n
 
+--- c0   c1    c2    c3 ....
+--- 1    1
+--- 1    0
+--- 1    0
+--- 0    0
+
+-- c = 1 0 0 0 0 0
+-- ms 0 = 2
+-- ms 1 = 1
+
+trivial-p : {X : 𝓤 ̇ } → X → 𝓥 ̇
+trivial-p _ = 𝟙
+
+trivial-d : {X : 𝓤 ̇ } → detachable (trivial-p {_} {𝓥} {X})
+trivial-d _ = inl *
+
+trivial-ϕ : {X : 𝓤 ̇ } → (c : X → X → ℕ∞) → continuous c (trivial-p {_} {𝓥} {X})
+trivial-ϕ _ = 0 , λ _ _ _ _ → *
+
+→→-c-searchable : {T : ℕ → 𝓤 ̇ }
+                → (cs : ((n : ℕ) → T n → T n → ℕ∞))
+                → ((n : ℕ) → c-searchable (cs n))
+                → c-searchable (Π-codistance cs)
+→→-c-searchable cs ss p d (m , ϕ) = η cs ss m p d ϕ where
+  η : {T : ℕ → 𝓤 ̇ }
+    → (cs : Π n ꞉ ℕ , (T n → T n → ℕ∞))
+    → ((n : ℕ) → c-searchable (cs n))
+    → (m : ℕ) → (p : Π T → 𝓥 ̇ ) → detachable p
+    → uc-mod-of (Π-codistance cs) p m
+    → Σ xs₀ ꞉ Π T , (Σ p → p xs₀)
+  η {𝓤} {𝓥} {T} cs 𝓔S 0 p d ϕ = xs , γ where
+    xs : Π T
+    xs n = pr₁ (𝓔S n (trivial-p {𝓤} {𝓥}) trivial-d (trivial-ϕ (cs n)))
+    γ : Σ p → p xs
+    γ (ys , pys) = ϕ ys xs (Zero-minimal (Π-codistance cs ys xs)) pys
+  η {𝓤} {𝓥} {T} cs 𝓔S (succ m) p d ϕ = x :: x→xs x , γ
+   where
+     px→xs = λ x xs → p (x :: xs)
+     dx→xs = λ x xs → d (x :: xs)
+     ϕx→xs : (x : T 0) → uc-mod-of (Π-codistance (cs ∘ succ)) (px→xs x) m
+     ϕx→xs x xs₁ xs₂ m≼cxs
+      = ϕ (x :: xs₁) (x :: xs₂) (Π-codistance-Succ cs x xs₁ xs₂ m m≼cxs)
+     x→xs = λ x → pr₁ (η (cs ∘ succ) (λ n → 𝓔S (succ n)) m (px→xs x) (dx→xs x) (ϕx→xs x))
+     px = λ x → p (x :: x→xs x)
+     dx = λ x → d (x :: x→xs x)
+     IH₀ = 𝓔S 0 px dx ({!m!} , {!!})
+     x = pr₁ IH₀
+     γ : Σ p → p (x :: x→xs x)
+     γ (xs₀ , pxs₀)
+      = pr₂ IH₀
+            (xs₀h , pr₂ (η (cs ∘ succ) (λ n → 𝓔S (succ n)) m (px→xs xs₀h) (dx→xs xs₀h) (ϕx→xs xs₀h))
+            (xs₀t , (ϕ xs₀ (xs₀h :: xs₀t) {!!} pxs₀)))
+       where
+        xs₀h = xs₀ 0
+        xs₀t = xs₀ ∘ succ
+        
 →-c-searchable : {X : 𝓤 ̇ } (d≡ : is-discrete X)
               → searchable X
               → c-searchable (codistance X d≡)

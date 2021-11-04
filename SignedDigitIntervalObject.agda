@@ -4,6 +4,7 @@ open import Prelude
 open import UF-FunExt
 open import ESIntervalObject hiding (⟨_⟩)
 open import NaturalsAddition renaming (_+_ to _+ℕ_)
+open import NaturalsOrder
 
 module SignedDigitIntervalObject
  (fe : FunExt) (io : Interval-object fe 𝓤') (hd : has-double fe 𝓤' io) where
@@ -262,3 +263,247 @@ mul-realiser α β = M-realiser (map2 digitMul α (λ _ → β)) ⁻¹
                      (λ a → *-is-⊕-homomorphism-l ⟨ a ⟩) α β
                  ∙ ⊕-homs-are-M-homs (_* ⟪ β ⟫) (*-is-⊕-homomorphism-r ⟪ β ⟫)
                      (map ⟨_⟩ α) ⁻¹
+
+_≺'_ : 𝟛 → 𝟛 → 𝓤₀ ̇
+−1 ≺' −1 = 𝟘
+−1 ≺'  O = 𝟙
+−1 ≺' +1 = 𝟙
+O  ≺' −1 = 𝟘
+O  ≺'  O = 𝟘
+O  ≺' +1 = 𝟙
++1 ≺'  _ = 𝟘
+
+_≺_ : 𝟛ᴺ → 𝟛ᴺ → 𝓤₀ ̇ 
+α ≺ β = Σ k ꞉ ℕ , (α k ≺' β k) × (Π i ꞉ ℕ , ((i < k) → α i ≡ β i))
+
+_<𝕀_ : 𝕀 → 𝕀 → 𝓤₀ ̇ 
+_<𝕀_ = {!!}
+
+endpoints-<𝕀 : u <𝕀 v
+endpoints-<𝕀 = {!𝟙!}
+
+order-normal : 𝟛ᴺ × 𝟛ᴺ → 𝓤₀ ̇ 
+order-normal (α , β) = (α ≺ β) × (⟪ α ⟫ <𝕀 ⟪ β ⟫)
+                     + (α ≡ β)
+                     + (β ≺ α) × (⟪ β ⟫ <𝕀 ⟪ α ⟫)
+
+order-normal-refl : (α : 𝟛ᴺ) → order-normal (α , α)
+order-normal-refl α = (inr ∘ inl) refl
+
+order-normal-sym : (α β : 𝟛ᴺ) → order-normal (α , β) → order-normal (β , α)
+order-normal-sym α β (inl x) = (inr ∘ inr) x
+order-normal-sym α .α (inr (inl refl)) = (inr ∘ inl) refl
+order-normal-sym α β (inr (inr x)) = inl x
+
+_-realiser : (a : 𝟛) → ⟪ repeat a ⟫ ≡ ⟨ a ⟩
+a -realiser = M-idem ⟨ a ⟩ 
+
+−1-realiser = −1 -realiser
+O-realiser  =  O -realiser
++1-realiser = +1 -realiser
+
+𝟛-trich : (a b : 𝟛) → (a ≺' b) + (a ≡ b) + (b ≺' a)
+𝟛-trich −1 −1 = (inr ∘ inl) refl
+𝟛-trich −1  O = inl *
+𝟛-trich −1 +1 = inl *
+𝟛-trich  O −1 = (inr ∘ inr) *
+𝟛-trich  O  O = (inr ∘ inl) refl
+𝟛-trich  O +1 = inl *
+𝟛-trich +1 −1 = (inr ∘ inr) *
+𝟛-trich +1  O = (inr ∘ inr) *
+𝟛-trich +1 +1 = (inr ∘ inl) refl
+
+order-normal-repeat : (a b : 𝟛) → order-normal (repeat a , repeat b)
+order-normal-repeat a b = {!!}
+
+head-normal : 𝟛ᴺ × 𝟛ᴺ → 𝓤₀ ̇ 
+head-normal (α , β) = (α ≺ β) × (⟪ α ⟫ <𝕀 ⟪ β ⟫)
+                    + (α 0 ≡ β 0)
+                    + (β ≺ α) × (⟪ β ⟫ <𝕀 ⟪ α ⟫)
+
+hnorm'' : (α₀ α₁ α₂ β₀ β₁ β₂ : 𝟛) → (𝟛ᴺ × 𝟛ᴺ) → 𝟛ᴺ × 𝟛ᴺ
+-- Case (i)
+hnorm'' −1 α₁ α₂ −1 β₁ β₂ (α , β) = α , β
+hnorm''  O α₁ α₂  O β₁ β₂ (α , β) = α , β
+hnorm'' +1 α₁ α₂ +1 β₁ β₂ (α , β) = α , β
+-- Case (iia)
+hnorm'' −1 −1 −1  O −1 β₂ (α , β) = α , β
+hnorm'' −1 −1 −1  O  O β₂ (α , β) = α , β
+hnorm'' −1 −1 −1  O +1 β₂ (α , β) = α , β
+hnorm'' −1 −1  O  O −1 β₂ (α , β) = α , β
+hnorm'' −1 −1  O  O  O β₂ (α , β) = α , β
+hnorm'' −1 −1  O  O +1 β₂ (α , β) = α , β
+hnorm'' −1 −1 +1  O  O β₂ (α , β) = α , β
+hnorm'' −1 −1 +1  O +1 β₂ (α , β) = α , β
+hnorm'' −1 −1 +1  O −1 β₂ (α , β) = α , (−1 ∶∶ (+1 ∶∶ tail (tail α)))
+-- Case (iib)
+hnorm'' −1  O α₂  O −1 β₂ (α , β) = α , (−1 ∶∶ (+1 ∶∶ tail (tail α)))
+hnorm'' −1  O +1  O  O β₂ (α , β) = (−1 ∶∶ (+1 ∶∶ (−1 ∶∶ tail (tail (tail α))))) , β
+hnorm'' −1  O +1  O +1 β₂ (α , β) = (−1 ∶∶ (+1 ∶∶ (−1 ∶∶ tail (tail (tail α))))) , β
+hnorm'' −1  O −1  O  O β₂ (α , β) = α , β
+hnorm'' −1  O  O  O  O β₂ (α , β) = α , β
+hnorm'' −1  O −1  O +1 β₂ (α , β) = α , β
+hnorm'' −1  O  O  O +1 β₂ (α , β) = α , β
+-- Case (iic)
+hnorm'' −1 +1 α₂ O β₁ β₂ (α , β) = (O ∶∶ (−1 ∶∶ tail (tail α))) , β
+-- Case (iii)
+hnorm'' −1 α₁ α₂ +1 β₁ β₂ (α , β) = β , β
+-- Case (iv)
+hnorm''  O α₁ α₂ −1 β₁ β₂ (α , β) = β , β
+-- Case (v)
+hnorm''  O α₁ α₂ +1 β₁ β₂ (α , β) = β , β
+-- Case (vi)
+hnorm'' +1 α₁ α₂ −1 β₁ β₂ (α , β) = β , β
+-- Case (vii)
+hnorm'' +1 α₁ α₂  O β₁ β₂ (α , β) = β , β
+
+hnorm' : 𝟛 → 𝟛 → 𝟛 → 𝟛 → 𝟛ᴺ → 𝟛ᴺ → ℕ → 𝟛 × 𝟛
+-- Case (i)
+hnorm' −1 −1 _ _ αₜ βₜ 0 = −1 , −1
+hnorm' −1 −1 _ _ αₜ βₜ (succ n) = αₜ n , βₜ n
+hnorm'  O  O _ _ αₜ βₜ 0 =  O ,  O
+hnorm'  O  O _ _ αₜ βₜ (succ n) = αₜ n , βₜ n
+hnorm' +1 +1 _ _ αₜ βₜ 0 = +1 , +1
+hnorm' +1 +1 _ _ αₜ βₜ (succ n) = αₜ n , βₜ n
+-- Case (ii)
+hnorm' −1  O c d αₜ βₜ n = βₜ n , βₜ n
+hnorm'  O −1 c d αₜ βₜ n = βₜ n , βₜ n
+hnorm'  O +1 c d αₜ βₜ n = βₜ n , βₜ n
+hnorm' +1  O c d αₜ βₜ n = βₜ n , βₜ n
+-- Case (iii)
+hnorm' −1 +1 c d αₜ βₜ n = βₜ n , βₜ n
+hnorm' +1 −1 c d αₜ βₜ n = βₜ n , βₜ n
+
+hnorm : 𝟛ᴺ × 𝟛ᴺ → 𝟛ᴺ × 𝟛ᴺ
+hnorm (α , β) = β , β
+
+if_then_else_ : {X : 𝓤 ̇ } {Y : 𝓥 ̇ } → decidable X → Y → Y → Y
+if (inl _) then x else y = x
+if (inr _) then x else y = y
+
+onorm'' : 𝟛ᴺ × 𝟛ᴺ → ℕ → 𝟛 × 𝟛
+onorm'' (α , β) 0 = α 0 , β 0
+onorm'' (α , β) (succ n)
+ = if   (𝟛-is-discrete (α 0) (β 0))
+   then onorm'' (hnorm ((α ∘ succ) , (β ∘ succ))) n
+   else (α (succ n) , β (succ n))
+
+onorm' : 𝟛ᴺ × 𝟛ᴺ → 𝟛ᴺ × 𝟛ᴺ
+onorm' (α , β) = pr₁ ∘ γ , pr₂ ∘ γ where
+  γ = onorm'' (α , β)
+
+onorm : 𝟛ᴺ × 𝟛ᴺ → 𝟛ᴺ × 𝟛ᴺ
+onorm = onorm' ∘ hnorm
+
+_≣_ : 𝟛ᴺ → 𝟛ᴺ → 𝓤' ̇
+α ≣ β = ⟪ α ⟫ ≡ ⟪ β ⟫
+
+infix 0 _≣_
+
+≣-identity₁ : {n : ℕ} (α : Vec 𝟛 n) (β : 𝟛ᴺ) → α ++' (O ∶∶ (−1 ∶∶ β)) ≣ α ++' (−1 ∶∶ (+1 ∶∶ β))
+≣-identity₁ [] β = M-prop₁ (map ⟨_⟩ ([] ++' (O ∶∶ (−1 ∶∶ β))))
+                 ∙ ap ((u ⊕ v) ⊕_) (M-prop₁ (map ⟨_⟩ ([] ++' (O ∶∶ (−1 ∶∶ β))) ∘ succ))
+                 ∙ ⊕-tran
+                 ∙ ap (_⊕ (v ⊕ M (map ⟨_⟩ β))) ⊕-idem
+                 ∙ ap (u ⊕_) (M-prop₁ (map ⟨_⟩ ([] ++' (−1 ∶∶ (+1 ∶∶ β))) ∘ succ) ⁻¹)
+                 ∙ M-prop₁ (map ⟨_⟩ ([] ++' (−1 ∶∶ (+1 ∶∶ β)))) ⁻¹
+≣-identity₁ (α₀ ∷ α) β = M-prop₁ (map ⟨_⟩ ((α₀ ∷ α) ++' (O ∶∶ (−1 ∶∶ β))))
+                       ∙ ap (⟨ α₀ ⟩ ⊕_) (≣-identity₁ α β)
+                       ∙ M-prop₁ (map ⟨_⟩ ((α₀ ∷ α) ++' (−1 ∶∶ (+1 ∶∶ β)))) ⁻¹
+
+≣-identity₂ : {n : ℕ} (α : Vec 𝟛 n) (β : 𝟛ᴺ) → α ++' (O ∶∶ (+1 ∶∶ β)) ≣ α ++' (+1 ∶∶ (−1 ∶∶ β))
+≣-identity₂ [] β = M-prop₁ (map ⟨_⟩ ([] ++' (O ∶∶ (+1 ∶∶ β))))
+                 ∙ ap (_⊕ M (map ⟨_⟩ (+1 ∶∶ β))) ⊕-comm
+                 ∙ ap ((v ⊕ u) ⊕_) (M-prop₁ (map ⟨_⟩ ([] ++' (O ∶∶ (+1 ∶∶ β))) ∘ succ))
+                 ∙ ⊕-tran
+                 ∙ ap (_⊕ (u ⊕ M (map ⟨_⟩ β))) ⊕-idem
+                 ∙ ap (v ⊕_) (M-prop₁ (map ⟨_⟩ ([] ++' (+1 ∶∶ (−1 ∶∶ β))) ∘ succ) ⁻¹)
+                 ∙ M-prop₁ (map ⟨_⟩ ([] ++' (+1 ∶∶ (−1 ∶∶ β)))) ⁻¹
+≣-identity₂ (α₀ ∷ α) β = M-prop₁ (map ⟨_⟩ ((α₀ ∷ α) ++' (O ∶∶ (+1 ∶∶ β))))
+                       ∙ ap (⟨ α₀ ⟩ ⊕_) (≣-identity₂ α β)
+                       ∙ M-prop₁ (map ⟨_⟩ ((α₀ ∷ α) ++' (+1 ∶∶ (−1 ∶∶ β)))) ⁻¹
+
+data 𝟜 : 𝓤₀ ̇ where
+  A B C D : 𝟜
+
+≣-id-f : 𝟜 → 𝟜 → 𝟛
+≣-id-f A A = O
+≣-id-f A B = −1
+≣-id-f A C = −1
+≣-id-f A D = +1
+≣-id-f B A = O
+≣-id-f B B = +1
+≣-id-f B C = +1
+≣-id-f B D = −1
+≣-id-f C A = −1
+≣-id-f C B = +1
+≣-id-f C C = O
+≣-id-f C D = −1
+≣-id-f D A = +1
+≣-id-f D B = −1
+≣-id-f D C = O
+≣-id-f D D = +1
+
+flip : 𝟜 → 𝟜
+flip A = C
+flip B = D
+flip C = A
+flip D = B
+
+≣-flip : (i j : 𝟜) → ≣-id-f i j ≡ ≣-id-f (flip i) (flip j) 
+≣-flip A A = refl
+≣-flip A B = refl
+≣-flip A C = refl
+≣-flip A D = refl
+≣-flip B A = refl
+≣-flip B B = refl
+≣-flip B C = refl
+≣-flip B D = refl
+≣-flip C A = refl
+≣-flip C B = refl
+≣-flip C C = refl
+≣-flip C D = refl
+≣-flip D A = refl
+≣-flip D B = refl
+≣-flip D C = refl
+≣-flip D D = refl
+
+_≊_ : 𝟛ᴺ → 𝟛ᴺ → 𝓤₀ ̇
+α ≊ β = (α ≡ β)
+      + (Σ n ꞉ ℕ , ((first- n) α ≡ (first- n) β)
+                 × ((tail- (succ (succ n))) α ≡ (tail- (succ (succ n))) β)
+                 × (Σ i ꞉ 𝟜 , (α n ≡ ≣-id-f i A) × (α (succ n) ≡ ≣-id-f i B)
+                            × (β n ≡ ≣-id-f i C) × (β (succ n) ≡ ≣-id-f i D)))
+
+≊-refl : (α : 𝟛ᴺ) → α ≊ α
+≊-refl α = inl refl
+
+≊-sym : (α β : 𝟛ᴺ) → α ≊ β → β ≊ α 
+≊-sym α .α (inl refl) = inl refl
+≊-sym α β (inr (n , f , g , i , a , b , c , d))
+  = inr (n , (f ⁻¹) , (g ⁻¹)
+        , flip i , (c ∙ ≣-flip i C) , (d ∙ ≣-flip i D) , (a ∙ ≣-flip i A) , (b ∙ ≣-flip i B))
+
+≊-implies-≣ : (α β : 𝟛ᴺ) → α ≊ β → α ≣ β
+≊-implies-≣ α .α (inl refl) = refl
+≊-implies-≣ α β (inr (n , f , g , (i , h)))
+ = ap ⟪_⟫ γ ∙ ζ i ∙ ap ⟪_⟫ δ ⁻¹
+ where
+   γ  : α ≡ ((first- n) α) ++' (≣-id-f i A ∶∶ (≣-id-f i B ∶∶ (tail- (succ (succ n))) α))
+   γ  = {!!}
+   δ' : β ≡ ((first- n) β) ++' (≣-id-f i C ∶∶ (≣-id-f i D ∶∶ (tail- (succ (succ n))) β))
+   δ' = {!!}
+   δ  : β ≡ ((first- n) α) ++' (≣-id-f i C ∶∶ (≣-id-f i D ∶∶ (tail- (succ (succ n))) α))
+   δ  = δ'
+      ∙ ap (_++' (≣-id-f i C ∶∶ (≣-id-f i D ∶∶ (tail- (succ (succ n))) β))) (f ⁻¹)
+      ∙ ap (λ ■ → (first- n) α ++' (≣-id-f i C ∶∶ (≣-id-f i D ∶∶ ■))) (g ⁻¹)
+   ζ : (i : 𝟜) → ⟪ (first- n) α ++' (≣-id-f i A ∶∶ (≣-id-f i B ∶∶ (tail- succ (succ n)) α)) ⟫
+               ≡ ⟪ (first- n) α ++' (≣-id-f i C ∶∶ (≣-id-f i D ∶∶ (tail- succ (succ n)) α)) ⟫
+   ζ A = ≣-identity₁ ((first- n) α) ((tail- succ (succ n)) α)
+   ζ B = ≣-identity₂ ((first- n) α) ((tail- succ (succ n)) α)
+   ζ C = ≣-identity₁ ((first- n) α) ((tail- succ (succ n)) α) ⁻¹
+   ζ D = ≣-identity₂ ((first- n) α) ((tail- succ (succ n)) α) ⁻¹
+{-
+final : (α β : 𝟛ᴺ) → let (α' , β') = onorm (α , β) in (α ≣ α') × (β ≣ β') × 
+final α β = {!!}
+-}

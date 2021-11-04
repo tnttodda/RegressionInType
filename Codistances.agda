@@ -1,4 +1,4 @@
-{-# OPTIONS --without-K --exact-split --safe #-}
+{-# OPTIONS --without-K --exact-split --allow-unsolved-metas #-}
 
 open import Prelude
 open import UF-FunExt
@@ -23,6 +23,62 @@ open sequences
 ×ⁿ-codistance cx 0 = cx
 ×ⁿ-codistance cx (succ n)
   = ×-codistance cx (×ⁿ-codistance cx n)
+  
+data Vec (A : 𝓤 ̇ ) : ℕ → 𝓤 ̇ where
+  [] : Vec A 0
+  _∷_ : {n : ℕ} → A → Vec A n → Vec A (succ n)
+
+first-_ : {A : 𝓥 ̇ } (n : ℕ) → (ℕ → A) → Vec A n
+(first- 0) a = []
+(first- succ n) a = head a ∷ (first- n) (tail a)
+
+min-of-Vec : {n : ℕ} → Vec 𝟚 (succ n) → 𝟚
+min-of-Vec (x ∷ []) = x
+min-of-Vec (x ∷ (x' ∷ xs)) = min𝟚 x (min-of-Vec (x' ∷ xs))
+
+vec-of-seq : (n i : ℕ) → i ≤ n → Vec (ℕ × ℕ) (succ i)
+vec-of-seq n        0        x = (n , 0) ∷ []
+vec-of-seq (succ n) (succ i) x = (n , succ i)
+                               ∷ vec-of-seq (succ n) i (≤-trans i n (succ n) x (≤-succ n))
+
+map-vec : {A : 𝓤 ̇ } {B : 𝓥 ̇ } {n : ℕ} → (A → B) → Vec A n → Vec B n
+map-vec f [] = []
+map-vec f (x ∷ xs) = (f x) ∷ (map-vec f xs)
+
+Π-codistance' : {T : ℕ → 𝓤 ̇ }
+              → ((n : ℕ) → T n → T n → (ℕ → 𝟚))
+              → Π T → Π T → (ℕ → 𝟚)
+Π-codistance' cs F G n = min-of-Vec (map-vec (uncurry α) β)
+ where
+   α = λ n i → cs n (F n) (G n) i
+   β = vec-of-seq n n (≤-refl n)
+
+Π-codistance'' : {T : ℕ → 𝓤 ̇ }
+               → ((n : ℕ) → T n → T n → (ℕ → 𝟚))
+               → Π T → Π T → (ℕ → 𝟚)
+Π-codistance'' cs F G 0 = cs 0 (F 0) (G 0) 0
+Π-codistance'' {𝓤} {T} cs F G (succ n)
+ = min𝟚 (cs 0 (F 0) (G 0) (succ n))
+        (Π-codistance'' (cs ∘ succ) (F ∘ succ) (G ∘ succ) n)
+
+-- Π-codistance' Tc (F , G) n = (α n 0) (α (n - 1) 1) (α (n - 2) 2) ...
+
+Π-codistance : {T : ℕ → 𝓤 ̇ }
+             → ((n : ℕ) → T n → T n → ℕ∞)
+             → Π T → Π T → ℕ∞
+Π-codistance cs F G = Π-codistance' (λ n x y → pr₁ (cs n x y)) F G
+                    , {!!}
+
+_::_ : {T : ℕ → 𝓤 ̇ } → T 0 → Π (λ n → T (succ n)) → Π T
+(x :: xs) 0 = x 
+(x :: xs) (succ n) = xs n
+
+Π-codistance-Succ : {T : ℕ → 𝓤 ̇ }
+                  → (cs : (n : ℕ) → T n → T n → ℕ∞)
+                  → (x : T 0) (xs₁ xs₂ : (n : ℕ) → T (succ n)) (m : ℕ)
+                  → under m ≼ Π-codistance (cs ∘ succ) xs₁ xs₂
+                  → Succ (under m) ≼ Π-codistance cs (x :: xs₁) (x :: xs₂)
+Π-codistance-Succ cs x xs₁ xs₂ m m≼cxs = {!!}
 
 ≈→≼ : {X : 𝓤 ̇ } (d≡ : is-discrete X) (x y : ℕ → X) (ε : ℕ)
     → (x ≈ y) ε → under ε ≼ codistance X d≡ x y
