@@ -63,22 +63,57 @@ map-vec f (x ∷ xs) = (f x) ∷ (map-vec f xs)
 
 -- Π-codistance' Tc (F , G) n = (α n 0) (α (n - 1) 1) (α (n - 2) 2) ...
 
+Π-decreasing : {T : ℕ → 𝓤 ̇ }
+             → (cs : (n : ℕ) → T n → T n → (ℕ → 𝟚))
+             → (ds : (n : ℕ) (x y : T n) → decreasing (cs n x y))
+             → (F G : Π T) → decreasing (Π-codistance'' cs F G)
+Π-decreasing cs ds F G zero r = ds 0 (F 0) (G 0) 0 (Lemma[min𝟚ab≡₁→a≡₁] r)
+Π-decreasing cs ds F G (succ n) r
+ = Lemma[a≡₁→b≡₁→min𝟚ab≡₁]
+     (ds 0 (F 0) (G 0) (succ n)
+       (Lemma[min𝟚ab≡₁→a≡₁] r))
+     (Π-decreasing (cs ∘ succ) (ds ∘ succ) (F ∘ succ) (G ∘ succ) n
+       (Lemma[min𝟚ab≡₁→b≡₁] {cs 0 (F 0) (G 0) (succ (succ n))} {_} r))
+
 Π-codistance : {T : ℕ → 𝓤 ̇ }
              → ((n : ℕ) → T n → T n → ℕ∞)
              → Π T → Π T → ℕ∞
-Π-codistance cs F G = Π-codistance' (λ n x y → pr₁ (cs n x y)) F G
-                    , {!!}
+Π-codistance cs F G = Π-codistance'' (λ n x y → pr₁ (cs n x y)) F G
+                    , Π-decreasing (λ n x y → pr₁ (cs n x y)) (λ n x y → pr₂ (cs n x y)) F G
 
 _::_ : {T : ℕ → 𝓤 ̇ } → T 0 → Π (λ n → T (succ n)) → Π T
 (x :: xs) 0 = x 
 (x :: xs) (succ n) = xs n
 
+Π-identical : {T : ℕ → 𝓤 ̇ }
+            → (cs : (n : ℕ) → T n → T n → ℕ∞)
+            → ((n : ℕ) (x : T n) (i : ℕ) → pr₁ (cs n x x) i ≡ ₁)
+            → (xs : Π T)
+            → (m : ℕ)
+            → under m ≼ Π-codistance cs xs xs
+Π-identical cs es xs m zero r = es 0 (xs 0) 0
+Π-identical cs es xs (succ m) (succ n) r
+ = Lemma[a≡₁→b≡₁→min𝟚ab≡₁]
+     (es 0 (xs 0) (succ n))
+     (Π-identical (cs ∘ succ) (es ∘ succ) (xs ∘ succ) m n r)
+
+Π-equivalent : {T : ℕ → 𝓤 ̇ }
+             → (cs : (n : ℕ) → T n → T n → ℕ∞)
+             → ((n : ℕ) (x : T n) (i : ℕ) → pr₁ (cs n x x) i ≡ ₁)
+             → (xs : Π T)
+             → (m : ℕ)
+             → under m ≼ Π-codistance cs xs ((xs 0) :: (xs ∘ succ))
+Π-equivalent cs es xs m zero r = es 0 (xs 0) 0
+Π-equivalent cs es xs (succ m) (succ n) r = Π-identical cs es xs (succ m) (succ n) r
+
 Π-codistance-Succ : {T : ℕ → 𝓤 ̇ }
                   → (cs : (n : ℕ) → T n → T n → ℕ∞)
+                  → ((x : T 0) (i : ℕ) → pr₁ (cs 0 x x) i ≡ ₁)
                   → (x : T 0) (xs₁ xs₂ : (n : ℕ) → T (succ n)) (m : ℕ)
                   → under m ≼ Π-codistance (cs ∘ succ) xs₁ xs₂
                   → Succ (under m) ≼ Π-codistance cs (x :: xs₁) (x :: xs₂)
-Π-codistance-Succ cs x xs₁ xs₂ m m≼cxs = {!!}
+Π-codistance-Succ cs e x xs₁ xs₂ m m≼cxs zero refl = e x 0
+Π-codistance-Succ cs e x xs₁ xs₂ m m≼cxs (succ n) r = Lemma[a≡₁→b≡₁→min𝟚ab≡₁] (e x (succ n)) (m≼cxs n r)
 
 ≈→≼ : {X : 𝓤 ̇ } (d≡ : is-discrete X) (x y : ℕ → X) (ε : ℕ)
     → (x ≈ y) ε → under ε ≼ codistance X d≡ x y
