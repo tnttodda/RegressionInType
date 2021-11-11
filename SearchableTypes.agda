@@ -15,19 +15,18 @@ open import Codistance fe
 open import Codistances fe
 open sequences
 
-searchable : (X : 𝓤 ̇ ) → 𝓤ω 
-searchable {𝓤} X 
- = {𝓥 : Universe}
- → (p : X → 𝓥 ̇ ) → detachable p
+searchable : {𝓥 : Universe} → (X : 𝓤 ̇ ) → Set (𝓤 ⊔ (𝓥 ⁺))
+searchable {𝓤} {𝓥} X
+ = (p : X → 𝓥 ̇ ) → detachable p
  → Σ x₀ ꞉ X , (Σ p → p x₀)
 
-c-searchable : {X : 𝓤 ̇ } → (X → X → ℕ∞) → 𝓤ω 
-c-searchable {𝓤} {X} c
- = {𝓥 : Universe} (p : X → 𝓥 ̇ ) → detachable p → continuous c p
+c-searchable : {𝓥 : Universe} {X : 𝓤 ̇ } → (X → X → ℕ∞) → Set (𝓤 ⊔ (𝓥 ⁺))
+c-searchable {𝓤} {𝓥} {X} c
+ = (p : X → 𝓥 ̇ ) → detachable p → continuous c p
  → Σ x₀ ꞉ X , (Σ p → p x₀)
 
-searchable→c-searchable : {X : 𝓤 ̇ } → (cx : X → X → ℕ∞)
-                        → searchable X → c-searchable cx
+searchable→c-searchable : {𝓥 : Universe} {X : 𝓤 ̇ } → (cx : X → X → ℕ∞)
+                        → searchable {𝓤} {𝓥} X → c-searchable cx
 searchable→c-searchable {𝓤} {𝓥} cx 𝓔Sx p d _ = 𝓔Sx p d
 
 𝓔⟨_,_⟩ : {X : 𝓤 ̇ }
@@ -95,12 +94,27 @@ trivial-d _ = inl *
 trivial-ϕ : {X : 𝓤 ̇ } → (c : X → X → ℕ∞) → continuous c (trivial-p {_} {𝓥} {X})
 trivial-ϕ _ = 0 , λ _ _ _ _ → *
 
-→→-c-searchable : {T : ℕ → 𝓤 ̇ }
+continuous-c-searcher : {𝓤 𝓥 𝓦 : Universe} {Y : 𝓤 ̇ }
+                      → (cy : Y → Y → ℕ∞)
+                      → c-searchable cy → Set (𝓤 ⊔ (𝓥 ⁺) ⊔ (𝓦 ⁺))
+continuous-c-searcher {𝓤} {𝓥} {𝓦} {Y} cy 𝓔Sy
+ = {X : 𝓦 ̇ }
+ → (cx : X → X → ℕ∞)
+ → (p : X → Y → 𝓥 ̇ )
+ → (d : (x : X) → detachable (p x))
+ → (m : ℕ) (ϕ : (x : X) → uc-mod-of cy (p x) m)
+ → uc-mod-of² cx cy (λ x → 𝓔⟨ cy , 𝓔Sy ⟩ (p x) (d x) (m , ϕ x)) m m
+
+≼-pred : (a b : ℕ∞) → Succ a ≼ b → a ≼ b
+≼-pred a b sa≼b n = pr₂ b n ∘ (sa≼b (succ n))
+
+→→-c-searchable : {𝓥 𝓦 : Universe} (T : ℕ → 𝓤 ̇ )
                 → (cs : ((n : ℕ) → T n → T n → ℕ∞))
                 → (es : ((n : ℕ) (x : T n) → Π (_⊏ cs n x x)))
-                → ((n : ℕ) → c-searchable (cs n))
-                → c-searchable (Π-codistance cs)
-→→-c-searchable cs es ss p d (m , ϕ) = η cs es ss m p d ϕ where
+                → ((n : ℕ) → c-searchable {𝓤} {𝓥} (cs n))
+                → Σ (continuous-c-searcher {𝓤} {𝓥} {𝓦} (Π-codistance cs))
+→→-c-searchable {𝓤} {𝓥} {𝓦} T cs es ss
+ = (λ p d (m , ϕ) → η cs es ss m p d ϕ) , λ cx p d m ϕ → μ cs es ss m p d ϕ cx where
   η : {T : ℕ → 𝓤 ̇ }
     → (cs : Π n ꞉ ℕ , (T n → T n → ℕ∞))
     → (es : ((n : ℕ) (x : T n) → Π (_⊏ cs n x x)))
@@ -108,32 +122,117 @@ trivial-ϕ _ = 0 , λ _ _ _ _ → *
     → (m : ℕ) → (p : Π T → 𝓥 ̇ ) → detachable p
     → uc-mod-of (Π-codistance cs) p m
     → Σ xs₀ ꞉ Π T , (Σ p → p xs₀)
-  η {𝓤} {𝓥} {T} cs es 𝓔S 0 p d ϕ = xs , γ where
-    xs : Π T
-    xs n = pr₁ (𝓔S n (trivial-p {𝓤} {𝓥}) trivial-d (trivial-ϕ (cs n)))
-    γ : Σ p → p xs
-    γ (ys , pys) = ϕ ys xs (Zero-minimal (Π-codistance cs ys xs)) pys
-  η {𝓤} {𝓥} {T} cs es 𝓔S (succ m) p d ϕ = x :: x→xs x , γ
-   where
+  μ : {T : ℕ → 𝓤 ̇ } {X : 𝓦 ̇ }
+    → (cs : Π n ꞉ ℕ , (T n → T n → ℕ∞))
+    → (es : ((n : ℕ) (x : T n) → Π (_⊏ cs n x x)))
+    → (ss : (n : ℕ) → c-searchable {𝓤} {𝓥} (cs n))
+    → (m : ℕ) → (p : X → Π T → 𝓥 ̇ ) → (d : ∀ x → detachable (p x))
+    → (ϕ : ∀ x → uc-mod-of (Π-codistance cs) (p x) m)
+    → (cx : X → X → ℕ∞)
+    → uc-mod-of² cx (Π-codistance cs) (λ x → pr₁ (η cs es ss m (p x) (d x) (ϕ x))) m m
+  𝓔HD : {T : ℕ → 𝓤 ̇ } → (cs : ((n : ℕ) → T n → T n → ℕ∞))
+      → (es : ((n : ℕ) (x : T n) → Π (_⊏ cs n x x)))
+      → (ss  : ((n : ℕ) → c-searchable (cs n)))
+      → (p : Π T → 𝓥 ̇ ) (d : detachable p) (m : ℕ) (ϕ : uc-mod-of (Π-codistance cs) p m)
+      → T 0
+  𝓔TL : {T : ℕ → 𝓤 ̇ } → (cs : ((n : ℕ) → T n → T n → ℕ∞))
+      → (es : ((n : ℕ) (x : T n) → Π (_⊏ cs n x x)))
+      → (ss  : ((n : ℕ) → c-searchable (cs n)))
+      → (p : Π T → 𝓥 ̇ ) (d : detachable p) (m : ℕ) (ϕ : uc-mod-of (Π-codistance cs) p m)
+      → T 0 → Π (T ∘ succ)
+  pH : {T : ℕ → 𝓤 ̇ } → (cs : ((n : ℕ) → T n → T n → ℕ∞))
+     → (es : ((n : ℕ) (x : T n) → Π (_⊏ cs n x x)))
+     → (ss  : ((n : ℕ) → c-searchable (cs n)))
+     → (p : Π T → 𝓥 ̇ ) (d : detachable p) (m : ℕ) (ϕ : uc-mod-of (Π-codistance cs) p m)
+     → T 0 → 𝓥 ̇
+  pH cs es ss p d 0 ϕ x = trivial-p T
+  pH cs es ss p d (succ m) ϕ x = p (x :: 𝓔TL cs es ss p d (succ m) ϕ x)
+  dH : {T : ℕ → 𝓤 ̇ } → (cs : ((n : ℕ) → T n → T n → ℕ∞))
+     → (es : ((n : ℕ) (x : T n) → Π (_⊏ cs n x x)))
+     → (ss  : ((n : ℕ) → c-searchable (cs n)))
+     → (p : Π T → 𝓥 ̇ ) (d : detachable p) (m : ℕ) (ϕ : uc-mod-of (Π-codistance cs) p m)
+     → detachable (pH cs es ss p d m ϕ)
+  dH cs es ss p d 0 ϕ x = trivial-d T
+  dH cs es ss p d (succ m) ϕ x = d (x :: 𝓔TL cs es ss p d (succ m) ϕ x)
+  ϕH : {T : ℕ → 𝓤 ̇ } → (cs : ((n : ℕ) → T n → T n → ℕ∞))
+     → (es : ((n : ℕ) (x : T n) → Π (_⊏ cs n x x)))
+     → (ss  : ((n : ℕ) → c-searchable (cs n)))
+     → (p : Π T → 𝓥 ̇ ) (d : detachable p) (m : ℕ) (ϕ : uc-mod-of (Π-codistance cs) p m)
+     → continuous (cs 0) (pH cs es ss p d m ϕ)
+  ϕH cs es ss p d 0 ϕ = trivial-ϕ (cs 0)
+  ϕH cs es ss p d (succ m) ϕ = {!!}
+  pT : {T : ℕ → 𝓤 ̇ } → (cs : ((n : ℕ) → T n → T n → ℕ∞))
+     → (es : ((n : ℕ) (x : T n) → Π (_⊏ cs n x x)))
+     → (ss  : ((n : ℕ) → c-searchable {𝓤} {𝓥} (cs n)))
+     → (p : Π T → 𝓥 ̇ ) (d : detachable p) (m : ℕ) (ϕ : uc-mod-of (Π-codistance cs) p (succ m))
+     → T 0 → Π (T ∘ succ) → 𝓥 ̇
+  pT cs es ss p d m ϕ x xs = p (x :: xs)
+  dT : {T : ℕ → 𝓤 ̇ } → (cs : ((n : ℕ) → T n → T n → ℕ∞))
+     → (es : ((n : ℕ) (x : T n) → Π (_⊏ cs n x x)))
+     → (ss  : ((n : ℕ) → c-searchable {𝓤} {𝓥} (cs n)))
+     → (p : Π T → 𝓥 ̇ ) (d : detachable p) (m : ℕ) (ϕ : uc-mod-of (Π-codistance cs) p (succ m))
+     → (x : T 0) → detachable (pT cs es ss p d m ϕ x)
+  dT cs es ss p d m ϕ x xs = d (x :: xs)
+  ϕT : {T : ℕ → 𝓤 ̇ } → (cs : ((n : ℕ) → T n → T n → ℕ∞))
+     → (es : ((n : ℕ) (x : T n) → Π (_⊏ cs n x x)))
+     → (ss  : ((n : ℕ) → c-searchable {𝓤} {𝓥} (cs n)))
+     → (p : Π T → 𝓥 ̇ ) (d : detachable p) (m : ℕ) (ϕ : uc-mod-of (Π-codistance cs) p (succ m))
+     → (x : T 0)
+     → uc-mod-of (Π-codistance (cs ∘ succ)) (pT cs es ss p d m ϕ x) m
+  ϕT cs es ss p d m ϕ x xs = {!!}
+  
+
+  𝓔HD cs es ss p d m ϕ
+   = pr₁ (ss 0 (pH cs es ss p d m ϕ) (dH cs es ss p d m ϕ) (ϕH cs es ss p d m ϕ))
+  𝓔TL cs es ss p d 0        ϕ x n = {!!}
+  𝓔TL cs es ss p d (succ m) ϕ x = pr₁ (η (cs ∘ succ) (es ∘ succ) (λ n → ss (succ n)) m
+                                      (pT cs es ss p d m ϕ x)
+                                      (dT cs es ss p d m ϕ x)
+                                      (ϕT cs es ss p d m ϕ x))
+  η {T} cs es 𝓔S m p d ϕ
+   = 𝓔HD cs es 𝓔S p d m ϕ :: 𝓔TL cs es 𝓔S p d m ϕ (𝓔HD cs es 𝓔S p d m ϕ)
+   , {!!}
+   {- where
      px→xs = λ x xs → p (x :: xs)
      dx→xs = λ x xs → d (x :: xs)
      ϕx→xs : (x : T 0) → uc-mod-of (Π-codistance (cs ∘ succ)) (px→xs x) m
      ϕx→xs x xs₁ xs₂ m≼cxs
       = ϕ (x :: xs₁) (x :: xs₂) (Π-codistance-Succ cs (es 0) x xs₁ xs₂ m m≼cxs)
-     x→xs = λ x → pr₁ (η (cs ∘ succ) (es ∘ succ) (λ n → 𝓔S (succ n)) m (px→xs x) (dx→xs x) (ϕx→xs x))
-     px = λ x → p (x :: x→xs x)
-     dx = λ x → d (x :: x→xs x)
-     IH₀ = 𝓔S 0 px dx (m , λ x y x₁ x₂ → ϕ (x :: x→xs x) (y :: x→xs y) {!!} x₂)
+     x→xs = λ x → pr₁ (η (cs ∘ succ) (es ∘ succ) (λ n → 𝓔S (succ n)) m
+                       (px→xs x) (dx→xs x) (ϕx→xs x))
+     px = λ x → px→xs x (x→xs x)
+     dx = λ x → dx→xs x (x→xs x)
+     ϕx : uc-mod-of (cs 0) px (succ m)
+     ϕx x y m≼cxy = ϕ (x :: x→xs x) (y :: x→xs y)
+                      (Π-codistance-Build cs x y (x→xs x) (x→xs y) m
+                        m≼cxy
+                        {!!}) -- (μ (cs ∘ succ) (es ∘ succ) (λ n → 𝓔S (succ n)) m px→xs dx→xs ϕx→xs
+                          -- (cs 0) x y (≼-pred (under m) (cs 0 x y) m≼cxy)))
+     IH₀ = 𝓔S 0 px dx (succ m , ϕx)
      x = pr₁ IH₀
      γ : Σ p → p (x :: x→xs x)
      γ (xs₀ , pxs₀)
       = pr₂ IH₀
-            (xs₀h , pr₂ (η (cs ∘ succ) (es ∘ succ) (λ n → 𝓔S (succ n)) m (px→xs xs₀h) (dx→xs xs₀h) (ϕx→xs xs₀h))
+          (xs₀h , pr₂ (η (cs ∘ succ) (es ∘ succ) (λ n → 𝓔S (succ n)) m
+                       (px→xs xs₀h) (dx→xs xs₀h) (ϕx→xs xs₀h))
             (xs₀t , (ϕ xs₀ (xs₀h :: xs₀t) (Π-equivalent cs es xs₀ (succ m)) pxs₀)))
        where
         xs₀h = xs₀ 0
-        xs₀t = xs₀ ∘ succ
-        
+        xs₀t = xs₀ ∘ succ -}
+  μ {T} {X} cs es 𝓔S (succ m) p d ϕ cx x y m≼cxy
+   = Π-codistance-Build cs (𝓔→ x) (𝓔→ y) (𝓔→→ x) (𝓔→→ y) m
+      {!!}
+      (μ (cs ∘ succ) (es ∘ succ) (λ n → 𝓔S (succ n)) m
+        (λ a → pT cs es 𝓔S (p a) (d a) m (ϕ a) (𝓔→ a))
+        (λ a → dT cs es 𝓔S (p a) (d a) m (ϕ a) (𝓔→ a)) 
+        (λ a → ϕT cs es 𝓔S (p a) (d a) m (ϕ a) (𝓔→ a))
+        cx x y (≼-pred (under m) (cx x y) m≼cxy)) where
+    𝓔→ : (a : X) → T 0
+    𝓔→ a = 𝓔HD cs es 𝓔S (p a) (d a) (succ m) (ϕ a)
+    𝓔→→ : (a : X) → Π (T ∘ succ)
+    𝓔→→ a = 𝓔TL cs es 𝓔S (p a) (d a) (succ m) (ϕ a) (𝓔→ a)
+    
+{-
 →-c-searchable : {X : 𝓤 ̇ } (d≡ : is-discrete X)
               → searchable X
               → c-searchable (codistance X d≡)
@@ -165,18 +264,8 @@ trivial-ϕ _ = 0 , λ _ _ _ _ → *
                                (dx→xs (head xs₀)) (ϕx→xs (head xs₀)))
           (tail xs₀ , ϕ xs₀ (head xs₀ ∶∶ tail xs₀)
           (∶∶-indistinguishable d≡ xs₀ (under (succ m))) pxs₀))
-
-continuous-c-searcher : {X : 𝓤 ̇ } {Y : 𝓥 ̇ }
-                      → (cy : Y → Y → ℕ∞)
-                      → (cx : X → X → ℕ∞)
-                      → c-searchable cy → 𝓤ω
-continuous-c-searcher {𝓤} {𝓥} {X} {Y} cy cx 𝓔Sy
- = {𝓦 : Universe}
- → (p : X → Y → 𝓦 ̇ )
- → (d : (x : X) → detachable (p x))
- → (m : ℕ) (ϕ : (x : X) → uc-mod-of cy (p x) m)
- → uc-mod-of² cx cy (λ x → 𝓔⟨ cy , 𝓔Sy ⟩ (p x) (d x) (m , ϕ x)) m m
-
+-}
+{-
 ×-c-searchable : {X : 𝓤 ̇ } {Y : 𝓥 ̇ }
               → (cx : X → X → ℕ∞) → (cy : Y → Y → ℕ∞)
               → c-searchable cx
@@ -209,3 +298,5 @@ continuous-c-searcher {𝓤} {𝓥} {X} {Y} cy cx 𝓔Sy
     = S⟨ cx , 𝓔Sx ⟩ px dx ϕx
         (x₀ , S⟨ cy , 𝓔Sy ⟩ (px→y x₀) (dx→y x₀) (m , ϕx→y x₀)
         (y₀ , px₀y₀))
+
+-}

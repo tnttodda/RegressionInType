@@ -106,6 +106,16 @@ _::_ : {T : ℕ → 𝓤 ̇ } → T 0 → Π (λ n → T (succ n)) → Π T
 Π-equivalent cs es xs m zero r = es 0 (xs 0) 0
 Π-equivalent cs es xs (succ m) (succ n) r = Π-identical cs es xs (succ m) (succ n) r
 
+Π-codistance-Build : {T : ℕ → 𝓤 ̇ }
+                   → (cs : (n : ℕ) → T n → T n → ℕ∞)
+                   → (x y : T 0) (xs ys : (n : ℕ) → T (succ n)) (m : ℕ)
+                   → Succ (under m) ≼ cs 0 x y
+                   → under m ≼ Π-codistance (cs ∘ succ) xs ys
+                   → Succ (under m) ≼ Π-codistance cs (x :: xs) (y :: ys)
+Π-codistance-Build cs x y xs ys m sm≼cxy m≼cxsys zero = sm≼cxy 0
+Π-codistance-Build cs x y xs ys m sm≼cxy m≼cxsys (succ n) r
+ = Lemma[a≡₁→b≡₁→min𝟚ab≡₁] (sm≼cxy (succ n) r) (m≼cxsys n r)
+
 Π-codistance-Succ : {T : ℕ → 𝓤 ̇ }
                   → (cs : (n : ℕ) → T n → T n → ℕ∞)
                   → ((x : T 0) (i : ℕ) → pr₁ (cs 0 x x) i ≡ ₁)
