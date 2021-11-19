@@ -31,6 +31,8 @@ A type X is decidable if we can decide whether we have a construction of X or ¬
 
 A predicate p : X → 𝓤₀ on a type X is decidable if it is everywhere decidable.
 
+*Change predicate to family, say they play the role of predicates
+
 \begin{code}
 
 decidable : 𝓤 ̇ → 𝓤 ̇
@@ -128,7 +130,7 @@ This is relatively straightforward:
 \begin{code}
 
 _≡⟦_⟧_ : {X : 𝓤 ̇ } → (ℕ → X) → ℕ → (ℕ → X) → 𝓤 ̇
-α ≡⟦ m ⟧ β = Π k ꞉ ℕ , (k ≤ m → α ≡ β)
+α ≡⟦ m ⟧ β = Π k ꞉ ℕ , (k < m → α k ≡ β k)
 
 is-continuous-𝟚ᴺ : ((ℕ → 𝟚) → 𝓤₀ ̇ ) → 𝓤₀ ̇
 is-continuous-𝟚ᴺ p = Σ m ꞉ ℕ , ((α β : ℕ → 𝟚) → α ≡⟦ m ⟧ β → p α → p β)
@@ -297,8 +299,11 @@ pr₂ (pr₂ (pr₂ (discrete-is-codistance {𝓤} {X} d))) x y z
 The codistance function for a type (ℕ → D) where D is discrete is defined
 by induction as follows:
 
-  c (α , β) n ≡ ₁    if x ≡⟦ n ⟧ y
-                ₀    otherwise
+  c (α , β) n ≡ ₁,    if x ≡⟦ n ⟧ y,
+                ₀,    otherwise.
+
+Its definition, and the proof that it is a codistance, can be seen in the
+file "Codistances.lagda".
 
 \begin{code}
 
@@ -307,15 +312,31 @@ discrete-seq-c'' α β n (inl _) = ₁
 discrete-seq-c'' α β n (inr _) = ₀
 
 discrete-decidable-seq : {X : 𝓤 ̇ } → is-discrete X → (α β : ℕ → X) → (n : ℕ) → decidable (α ≡⟦ n ⟧ β)
-discrete-decidable-seq d α β zero = {!!}
-discrete-decidable-seq d α β (succ n) = {!!}
+discrete-decidable-seq d α β 0 = inl (λ _ ())
+discrete-decidable-seq d α β (succ n)
+ = Cases (discrete-decidable-seq d α β n) γ₁ (inr ∘ γ₂)
+ where
+   γ₁ : α ≡⟦ n ⟧ β → decidable (α ≡⟦ succ n ⟧ β)
+   γ₁ α≈β = Cases (d (α n) (β n)) (inl ∘ γₗ) (inr ∘ γᵣ)
+    where
+      γₗ : α n ≡ β n → α ≡⟦ succ n ⟧ β
+      γₗ e k k≤n = Cases (<-split k n k≤n)
+                     (λ k<n → α≈β k k<n)
+                     (λ k≡n → transport (λ - → α - ≡ β -) (k≡n ⁻¹) e)
+      γᵣ : ¬ (α n ≡ β n) → ¬ (α ≡⟦ succ n ⟧ β)
+      γᵣ g α≡⟦sn⟧ = g (α≡⟦sn⟧ n (<-succ n))
+   γ₂ : ¬ (α ≡⟦ n ⟧ β) → ¬ (α ≡⟦ succ n ⟧ β)
+   γ₂ f = f ∘ (λ α≈β k k≤n → α≈β k (<-trans k n (succ n) k≤n (<-succ n)))
 
 discrete-seq-c' : {X : 𝓤 ̇ } → is-discrete X → (α β : ℕ → X) → (ℕ → 𝟚)
 discrete-seq-c' d α β n = discrete-seq-c'' α β n (discrete-decidable-seq d α β n)
+
+decreasing1 : {X : 𝓤 ̇ } → ∀ α β n d₁ d₂ → (discrete-seq-c'' α β n d₁ ≥₂ discrete-seq-c'' α β (succ n) d₂)
+decreasing1 α β d₁ d₂ = {!!}
 
 discrete-seq-codistance : {X : 𝓤 ̇ } → is-discrete X → ((ℕ → X) × (ℕ → X) → ℕ∞̇)
 discrete-seq-codistance d (α , β) = δ , γ where
   δ : ℕ → 𝟚
   δ = discrete-seq-c' d α β
   γ : Π n ꞉ ℕ , (δ n ≥₂ δ (succ n))
-  γ n δsn≡₁ = {!!}
+  γ n = decreasing1 α β n (discrete-decidable-seq d α β n) (discrete-decidable-seq d α β (succ n))
