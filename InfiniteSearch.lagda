@@ -127,7 +127,7 @@ This is relatively straightforward:
 
 \begin{code}
 
-_≡⟦_⟧_ : (ℕ → 𝟚) → ℕ → (ℕ → 𝟚) → 𝓤₀ ̇
+_≡⟦_⟧_ : {X : 𝓤 ̇ } → (ℕ → X) → ℕ → (ℕ → X) → 𝓤 ̇
 α ≡⟦ m ⟧ β = Π k ꞉ ℕ , (k ≤ m → α ≡ β)
 
 is-continuous-𝟚ᴺ : ((ℕ → 𝟚) → 𝓤₀ ̇ ) → 𝓤₀ ̇
@@ -153,48 +153,169 @@ This theorem of course implies that types ℕ → D are searchable; but in order
 to prove the Tychonoff theorem we need a much more general definition of
 uniform continuity that does not require the types (T n) to be disrete.
 
-We now introduce the idea of a coultrametric type.
+We now introduce the idea of a coultrametric type. This is a type X equipped
+with a binary function c : X × X → ℕ∞.
+
+ℕ∞ is the type of extended natural numbers (i.e. ℕ extended with a point at
+infinity), encoded as decreasing infinitary binary sequences.
 
 \begin{code}
 
-is-codistance : {X : 𝓤 ̇ } → (X × X → ℕ∞) → 𝓤 ̇
+ℕ∞̇ : 𝓤₀ ̇ 
+ℕ∞̇ = Σ α ꞉ (ℕ → 𝟚) , (Π n ꞉ ℕ , α n ≥₂ α (succ n))
+
+\end{code}
+
+Any natural number n : ℕ can be mapped to an extended natural k ↑ : ℕ∞,
+which is the sequence with k-many 1s followed by infinitely-many 0s.
+
+  e.g. 5 ↑ ≡ 111110000000...
+
+∞ : ℕ∞ is represented as the sequence with infinitely-many 1s.
+
+  i.e. ∞   ≡ 111111111111...
+
+\begin{code}
+
+_::_ : {X : 𝓤 ̇ } → X → (ℕ → X) → (ℕ → X)
+(x :: xs) 0        = x
+(x :: xs) (succ n) = xs n
+
+_↑ : ℕ → ℕ∞̇
+0      ↑ = (λ _ → ₀)
+         , (λ _ → id)
+succ n ↑ = (₁ :: pr₁ (n ↑))
+         , induction (λ _ → refl) (λ i _ → pr₂ (n ↑) i)
+
+∞̇ : ℕ∞̇
+∞̇ = (λ _ → ₁) , (λ _ _ → refl)
+
+\end{code}
+
+Given two extended naturals α , β : ℕ∞̇,
+α ≼̇ β if everywhere α has 1s β also has 1s.
+
+\begin{code}
+
+_≼̇_ : ℕ∞̇ → ℕ∞̇ → 𝓤₀ ̇
+(α , _) ≼̇ (β , _) = Π n ꞉ ℕ , (α n ≡ ₁ → β n ≡ ₁)
+
+\end{code}
+
+A binary function c : X × X → ℕ∞ is a codistance function
+if it satisfies the below.
+
+\begin{code}
+
+is-codistance : {X : 𝓤 ̇ } → (X × X → ℕ∞̇) → 𝓤 ̇
 is-codistance {𝓤} {X} c
-  = ((x     : X) → c (x , x) ≡ ∞)
+  = ((x     : X) → c (x , x) ≡ ∞̇)
+  × ((x y   : X) → c (x , y) ≡ ∞̇ → x ≡ y)
   × ((x y   : X) → c (x , y) ≡ c (y , x))
-  × ((x y z : X) → c (x , z) ≼ min (c (x , y)) (c (y , z)))
+  × ((x y z : X) → min (c (x , y)) (c (y , z)) ≼̇ c (x , z))
 
-discrete-c' : {X : 𝓤 ̇ } → ((x , y) : X × X) → decidable (x ≡ y) → ℕ∞
-discrete-c' (x , y) (inl _) = ∞
-discrete-c' (x , y) (inr _)  = Zero
+\end{code}
 
-discrete-c : {X : 𝓤 ̇ } → is-discrete X → (X × X → ℕ∞)
-discrete-c d (x , y) = discrete-c' (x , y) (d x y)
+This function measures the 'closeness' of the two provided
+constructions of X. In this sense, it is the dual of a metric.
 
-discrete-c'1 : {X : 𝓤 ̇ } → (x : X) (d : decidable (x ≡ x))
-             → discrete-c' (x , x) d ≡ ∞
-discrete-c'1 x (inl  _ ) = refl
-discrete-c'1 x (inr x≢x) = 𝟘-elim (x≢x refl)
+Such a function is a codistance function if it satisfies:
+ (1) A construction is infinitely close to itself
+      ∀ x → c (x , x) ≡ ∞
 
-discrete-c'2 : {X : 𝓤 ̇ } → (x y : X ) (d : decidable (x ≡ y))
-             → (d2 : decidable (y ≡ x))
-             → discrete-c' (x , y) d ≡ discrete-c' (y , x) d2
-discrete-c'2 x  y (inl  _  ) (inl  _  ) = refl
-discrete-c'2 x  y (inr  _  ) (inr  _  ) = refl
-discrete-c'2 x .x (inl refl) (inr x≢x ) = 𝟘-elim (x≢x refl)
-discrete-c'2 x .x (inr x≢x ) (inl refl) = 𝟘-elim (x≢x refl)
+ (2) Constructions that are infinite close are equal
+      ∀ x y → c (x , y) ≡ ∞ → x ≡ y
 
-discrete-c'3 : {X : 𝓤 ̇ } → (x y z : X)
-             → (d1 : decidable (x ≡ y))
-             → (d2 : decidable (y ≡ z))
-             → (d3 : decidable (x ≡ z))
-             → discrete-c' (x , z) d3
-             ≼ min (discrete-c' (x , y) d1) (discrete-c' (y , z) d2)
-discrete-c'3 x y z (inl _) (inl _) (inl _) = {!!}
-discrete-c'3 x y z (inl x₁) (inl x₂) (inr x₃) = 𝟘-elim {!!}
-discrete-c'3 x y z (inl x₁) (inr x₂) (inl x₃) = 𝟘-elim {!!}
-discrete-c'3 x y z (inl x₁) (inr x₂) (inr x₃) = 𝟘-elim {!!}
-discrete-c'3 x y z (inr x₁) (inl x₂) (inl x₃) = 𝟘-elim {!!}
-discrete-c'3 x y z (inr x₁) (inl x₂) (inr x₃) = 𝟘-elim {!!}
-discrete-c'3 x y z (inr x₁) (inr x₂) (inl x₃) = 𝟘-elim {!!}
-discrete-c'3 x y z (inr x₁) (inr x₂) (inr x₃) = {!!}
-             
+ (3) Symmetricity
+      ∀ x y → c (x , y) ≡ c (y , x)
+
+ (4) Triangle ultrametric property
+      ∀ x y z → min (c (x , y)) (c (y , z)) ≼ c (x , z)
+
+From these properties, we can see clearly the relationship with a metric.
+In fact, an ultrametric (a metric with a generalised triangle equality
+property) can be defined from a coultrametric easily:
+
+  m : X × X → ℝ
+  m (x , y) ≡ 2̂^{ − c(x , y) }
+
+Where, as usual, 2^{−∞} ≡ 0.
+
+More detail on codistances is given in the file "Codistance.lagda";
+for now, we briely introduce the discrete codistance and the
+discrete-sequence codistance.
+
+The codistance function for a discrete type is defined easily by cases:
+                  
+  c (x , y) ≡   ∞    if x ≡ y
+                0 ↑  otherwise
+
+\begin{code}
+
+discrete-c' : {X : 𝓤 ̇ } → ((x , y) : X × X) → decidable (x ≡ y) → ℕ∞̇
+discrete-c' (x , y) (inl _) = ∞̇
+discrete-c' (x , y) (inr _) = 0 ↑
+
+discrete-codistance : {X : 𝓤 ̇ } → is-discrete X → (X × X → ℕ∞̇)
+discrete-codistance d (x , y) = discrete-c' (x , y) (d x y)
+
+discrete-is-codistance : {X : 𝓤 ̇ } → (d : is-discrete X)
+                       → is-codistance (discrete-codistance d)
+pr₁ (discrete-is-codistance {𝓤} {X} d) x
+ = γ x     (d x x)
+  where
+    γ : ∀ x d → discrete-c' (x , x) d ≡ ∞̇
+    γ x (inl  _ ) = refl
+    γ x (inr x≢x) = 𝟘-elim (x≢x refl)
+pr₁ (pr₂ (discrete-is-codistance {𝓤} {X} d)) x y
+ = γ x y   (d x y) 
+  where
+    γ : ∀ x y d → discrete-c' (x , y) d ≡ ∞̇ → x ≡ y
+    γ x .x (inl refl) _      = refl
+    γ x  y (inr  _  ) Zero≡∞ = 𝟘-elim (zero-is-not-one
+                                 (ap (λ - → pr₁ - 0) Zero≡∞))
+pr₁ (pr₂ (pr₂ (discrete-is-codistance {𝓤} {X} d))) x y
+ = γ x y   (d x y) (d y x)
+  where
+    γ : ∀ x y d₁ d₂ → discrete-c' (x , y) d₁ ≡ discrete-c' (y , x) d₂
+    γ x  y (inl  _  ) (inl  _  ) = refl
+    γ x  y (inr  _  ) (inr  _  ) = refl
+    γ x .x (inl refl) (inr x≢x ) = 𝟘-elim (x≢x refl)
+    γ x .x (inr x≢x ) (inl refl) = 𝟘-elim (x≢x refl)
+pr₂ (pr₂ (pr₂ (discrete-is-codistance {𝓤} {X} d))) x y z
+ = γ x y z (d x y) (d y z) (d x z)
+  where
+    γ : ∀ x y z d₁ d₂ d₃ → min (discrete-c' (x , y) d₁) (discrete-c' (y , z) d₂)
+                              ≼̇ discrete-c' (x , z) d₃
+    γ x  y  z       _           _     (inl  _  ) _ _ = refl
+    γ x  y  z (inl  _   ) (inr  _   ) (inr  _  ) _   = id
+    γ x  y  z (inr  _   )       _     (inr  _  ) _   = id
+    γ x .x .x (inl refl ) (inl refl ) (inr x≢x )     = 𝟘-elim (x≢x refl)
+
+\end{code}
+
+The codistance function for a type (ℕ → D) where D is discrete is defined
+by induction as follows:
+
+  c (α , β) n ≡ ₁    if x ≡⟦ n ⟧ y
+                ₀    otherwise
+
+\begin{code}
+
+discrete-seq-c'' : {X : 𝓤 ̇ } → (α β : ℕ → X) → (n : ℕ) → decidable (α ≡⟦ n ⟧ β) → 𝟚
+discrete-seq-c'' α β n (inl _) = ₁
+discrete-seq-c'' α β n (inr _) = ₀
+
+discrete-decidable-seq : {X : 𝓤 ̇ } → is-discrete X → (α β : ℕ → X) → (n : ℕ) → decidable (α ≡⟦ n ⟧ β)
+discrete-decidable-seq d α β zero = {!!}
+discrete-decidable-seq d α β (succ n) = {!!}
+
+discrete-seq-c' : {X : 𝓤 ̇ } → is-discrete X → (α β : ℕ → X) → (ℕ → 𝟚)
+discrete-seq-c' d α β n = discrete-seq-c'' α β n (discrete-decidable-seq d α β n)
+
+discrete-seq-codistance : {X : 𝓤 ̇ } → is-discrete X → ((ℕ → X) × (ℕ → X) → ℕ∞̇)
+discrete-seq-codistance d (α , β) = δ , γ where
+  δ : ℕ → 𝟚
+  δ = discrete-seq-c' d α β
+  γ : Π n ꞉ ℕ , (δ n ≥₂ δ (succ n))
+  γ n δsn≡₁ = {!!}
