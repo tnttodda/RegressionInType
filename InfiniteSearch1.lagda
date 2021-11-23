@@ -16,7 +16,7 @@ open import Two-Properties
 open import UF-Subsingletons
 open import DiscreteAndSeparated
 
-module InfiniteSearch where
+module InfiniteSearch1 where
 
 \end{code}
 
@@ -31,7 +31,7 @@ A type X is decidable if we can decide whether we have a construction of X or ¬
 
 A predicate p : X → 𝓤₀ on a type X is decidable if it is everywhere decidable.
 
-*Change predicate to family, say they play the role of predicates
+⦅TODO: Change predicate to family, say they play the role of predicates⦆
 
 \begin{code}
 
