@@ -115,7 +115,8 @@ predicates on the Cantor type ℕ → 𝟚.
 The magic here is in fact performed by continuity! In System T (?), every
 predicate p over ℕ → 𝟚 is uniformly continuous, and therefore only a finite
 prefix of ??? is required to construct a finite
-prefix of α₀ : ℕ → 𝟚 satisfying Σ p → p α₀. 
+prefix of α₀ : ℕ → 𝟚 satisfying Σ p → p α₀.
+⦅ TODO : Finish ⦆
 
 However, although the Haskell program presumably terminates given any predicate,
 formalising this program in Agda is more subtle. By implicitly assuming the
@@ -331,8 +332,12 @@ discrete-decidable-seq d α β (succ n)
 discrete-seq-c' : {X : 𝓤 ̇ } → is-discrete X → (α β : ℕ → X) → (ℕ → 𝟚)
 discrete-seq-c' d α β n = discrete-seq-c'' α β n (discrete-decidable-seq d α β n)
 
-decreasing1 : {X : 𝓤 ̇ } → ∀ α β n d₁ d₂ → (discrete-seq-c'' α β n d₁ ≥₂ discrete-seq-c'' α β (succ n) d₂)
-decreasing1 α β d₁ d₂ = {!!}
+decreasing1 : {X : 𝓤 ̇ } → (α β : ℕ → X) → ∀ n d₁ d₂
+            → (discrete-seq-c'' α β n d₁ ≥₂ discrete-seq-c'' α β (succ n) d₂)
+decreasing1 α β n (inl x) (inl x₁) _ = refl
+decreasing1 α β n (inl x) (inr x₁) _ = refl
+decreasing1 α β n (inr x) (inl x₁) refl = 𝟘-elim (x (λ k k<n → x₁ k (<-trans k n (succ n) k<n (<-succ n))))
+decreasing1 α β n (inr x) (inr x₁) = 𝟘-elim ∘ zero-is-not-one
 
 discrete-seq-codistance : {X : 𝓤 ̇ } → is-discrete X → ((ℕ → X) × (ℕ → X) → ℕ∞̇)
 discrete-seq-codistance d (α , β) = δ , γ where
@@ -340,3 +345,7 @@ discrete-seq-codistance d (α , β) = δ , γ where
   δ = discrete-seq-c' d α β
   γ : Π n ꞉ ℕ , (δ n ≥₂ δ (succ n))
   γ n = decreasing1 α β n (discrete-decidable-seq d α β n) (discrete-decidable-seq d α β (succ n))
+
+\end{code}
+
+⦅ TODO: Now we show this is a codistance (substitute proofs in from Codistance.lagda) ⦆
