@@ -15,8 +15,12 @@ open import GenericConvergentSequence
 open import Two-Properties
 open import UF-Subsingletons
 open import DiscreteAndSeparated
+open import UF-Base
+open import UF-FunExt
+open import UF-Subsingletons
+open import UF-Subsingletons-FunExt
 
-module InfiniteSearch1 where
+module InfiniteSearch1 (fe : FunExt) where
 
 \end{code}
 
@@ -31,7 +35,9 @@ A type X is decidable if we can decide whether we have a construction of X or ¬
 
 A predicate p : X → 𝓤₀ on a type X is decidable if it is everywhere decidable.
 
-⦅TODO: Change predicate to family, say they play the role of predicates⦆
+⦅TODO: Change predicate to family, say they play the role of predicates
+Explain it UF that a different notion of predicate is used, but not important
+for this post⦆
 
 \begin{code}
 
@@ -121,20 +127,20 @@ prefix of α₀ : ℕ → 𝟚 satisfying Σ p → p α₀.
 However, although the Haskell program presumably terminates given any predicate,
 formalising this program in Agda is more subtle. By implicitly assuming the
 predicate to be searched is uniformly continuous, Agda's termination checker
-fails on the proof that ℕ → 𝟚 is continuous. This can be seen in the file
-'CountableTychonoff', which has the termination checker turned off, and hence
-is an 'unsafe' module.
+fails on the proof that ℕ → 𝟚 is uniformly continuous. This can be seen in the
+file 'CountableTychonoff', which has the termination checker turned off, and
+hence is an 'unsafe' module.
 
-We instead require a specific definition of a 'continuous predicate' over ℕ → 𝟚.
-This is relatively straightforward:
+We instead require a specific definition of a 'uniformly continuous predicate'
+over ℕ → 𝟚. This is relatively straightforward:
 
 \begin{code}
 
 _≡⟦_⟧_ : {X : 𝓤 ̇ } → (ℕ → X) → ℕ → (ℕ → X) → 𝓤 ̇
-α ≡⟦ m ⟧ β = Π k ꞉ ℕ , (k < m → α k ≡ β k)
+α ≡⟦ m ⟧ β = Π k ꞉ ℕ , (k ≤ m → α k ≡ β k)
 
-is-continuous-𝟚ᴺ : ((ℕ → 𝟚) → 𝓤₀ ̇ ) → 𝓤₀ ̇
-is-continuous-𝟚ᴺ p = Σ m ꞉ ℕ , ((α β : ℕ → 𝟚) → α ≡⟦ m ⟧ β → p α → p β)
+is-u-continuous-𝟚ᴺ : ((ℕ → 𝟚) → 𝓤₀ ̇ ) → 𝓤₀ ̇
+is-u-continuous-𝟚ᴺ p = Σ m ꞉ ℕ , ((α β : ℕ → 𝟚) → α ≡⟦ m ⟧ β → p α → p β)
 
 \end{code}
 
@@ -164,8 +170,11 @@ infinity), encoded as decreasing infinitary binary sequences.
 
 \begin{code}
 
+decreasing-binary-seq : (ℕ → 𝟚) → 𝓤₀ ̇
+decreasing-binary-seq α = Π n ꞉ ℕ , α n ≥₂ α (succ n)
+
 ℕ∞̇ : 𝓤₀ ̇ 
-ℕ∞̇ = Σ α ꞉ (ℕ → 𝟚) , (Π n ꞉ ℕ , α n ≥₂ α (succ n))
+ℕ∞̇ = Σ decreasing-binary-seq
 
 \end{code}
 
@@ -304,7 +313,7 @@ by induction as follows:
                 ₀,    otherwise.
 
 Its definition, and the proof that it is a codistance, can be seen in the
-file "Codistances.lagda".
+file "Codistance.lagda".
 
 \begin{code}
 
@@ -313,21 +322,26 @@ discrete-seq-c'' α β n (inl _) = ₁
 discrete-seq-c'' α β n (inr _) = ₀
 
 discrete-decidable-seq : {X : 𝓤 ̇ } → is-discrete X → (α β : ℕ → X) → (n : ℕ) → decidable (α ≡⟦ n ⟧ β)
-discrete-decidable-seq d α β 0 = inl (λ _ ())
+discrete-decidable-seq d α β 0 = Cases (d (α 0) (β 0)) (inl ∘ γₗ) (inr ∘ γᵣ)
+ where
+   γₗ : α 0 ≡ β 0 → α ≡⟦ zero ⟧ β
+   γₗ e 0 _ = e
+   γᵣ : ¬ (α 0 ≡ β 0) → ¬ (α ≡⟦ zero ⟧ β)
+   γᵣ f α≡⟦0⟧β = 𝟘-elim (f (α≡⟦0⟧β 0 *))
 discrete-decidable-seq d α β (succ n)
  = Cases (discrete-decidable-seq d α β n) γ₁ (inr ∘ γ₂)
  where
    γ₁ : α ≡⟦ n ⟧ β → decidable (α ≡⟦ succ n ⟧ β)
-   γ₁ α≈β = Cases (d (α n) (β n)) (inl ∘ γₗ) (inr ∘ γᵣ)
+   γ₁ α≈β = Cases (d (α (succ n)) (β (succ n))) (inl ∘ γₗ) (inr ∘ γᵣ)
     where
-      γₗ : α n ≡ β n → α ≡⟦ succ n ⟧ β
-      γₗ e k k≤n = Cases (<-split k n k≤n)
-                     (λ k<n → α≈β k k<n)
-                     (λ k≡n → transport (λ - → α - ≡ β -) (k≡n ⁻¹) e)
-      γᵣ : ¬ (α n ≡ β n) → ¬ (α ≡⟦ succ n ⟧ β)
-      γᵣ g α≡⟦sn⟧ = g (α≡⟦sn⟧ n (<-succ n))
+      γₗ : α (succ n) ≡ β (succ n) → α ≡⟦ succ n ⟧ β
+      γₗ e k k≤n = Cases (≤-split k n k≤n)
+                     (λ k≤n  → α≈β k k≤n)
+                     (λ k≡sn → transport (λ - → α - ≡ β -) (k≡sn ⁻¹) e)
+      γᵣ : ¬ (α (succ n) ≡ β (succ n)) → ¬ (α ≡⟦ succ n ⟧ β)
+      γᵣ g α≡⟦sn⟧β = g (α≡⟦sn⟧β (succ n) (≤-refl n))
    γ₂ : ¬ (α ≡⟦ n ⟧ β) → ¬ (α ≡⟦ succ n ⟧ β)
-   γ₂ f = f ∘ (λ α≈β k k≤n → α≈β k (<-trans k n (succ n) k≤n (<-succ n)))
+   γ₂ f = f ∘ (λ α≈β k k≤n → α≈β k (≤-trans k n (succ n) k≤n (≤-succ n)))
 
 discrete-seq-c' : {X : 𝓤 ̇ } → is-discrete X → (α β : ℕ → X) → (ℕ → 𝟚)
 discrete-seq-c' d α β n = discrete-seq-c'' α β n (discrete-decidable-seq d α β n)
@@ -336,7 +350,7 @@ decreasing1 : {X : 𝓤 ̇ } → (α β : ℕ → X) → ∀ n d₁ d₂
             → (discrete-seq-c'' α β n d₁ ≥₂ discrete-seq-c'' α β (succ n) d₂)
 decreasing1 α β n (inl x) (inl x₁) _ = refl
 decreasing1 α β n (inl x) (inr x₁) _ = refl
-decreasing1 α β n (inr x) (inl x₁) refl = 𝟘-elim (x (λ k k<n → x₁ k (<-trans k n (succ n) k<n (<-succ n))))
+decreasing1 α β n (inr x) (inl x₁) refl = 𝟘-elim (x (λ k k<n → x₁ k (≤-trans k n (succ n) k<n (≤-succ n)))) -- (<-trans k n (succ n) k<n (<-succ n))))
 decreasing1 α β n (inr x) (inr x₁) = 𝟘-elim ∘ zero-is-not-one
 
 discrete-seq-codistance : {X : 𝓤 ̇ } → is-discrete X → ((ℕ → X) × (ℕ → X) → ℕ∞̇)
@@ -349,3 +363,82 @@ discrete-seq-codistance d (α , β) = δ , γ where
 \end{code}
 
 ⦅ TODO: Now we show this is a codistance (substitute proofs in from Codistance.lagda) ⦆
+
+\begin{code}
+
+𝟚-is-set : (a b : 𝟚) → is-prop (a ≡ b)
+𝟚-is-set ₀ ₀ refl refl = refl
+𝟚-is-set ₁ ₁ refl refl = refl
+
+≥₂-is-prop : (a b : 𝟚) → is-prop (a ≥₂ b)
+≥₂-is-prop a b = Π-is-prop (fe _ _) (λ _ → 𝟚-is-set a ₁)
+
+decreasing-prop : (α : ℕ → 𝟚) → is-prop (decreasing-binary-seq α)
+decreasing-prop α = Π-is-prop (fe _ _) (λ n → ≥₂-is-prop (α n) (α (succ n)))
+
+ℕ∞-equals : {α β : ℕ∞̇} → pr₁ α ∼ pr₁ β → α ≡ β
+ℕ∞-equals p = to-subtype-≡ decreasing-prop (dfunext (fe _ _) p)
+
+discrete-seq-is-codistance : {X : 𝓤 ̇ } → (d : is-discrete X)
+                           → is-codistance (discrete-seq-codistance d)
+pr₁ (discrete-seq-is-codistance {𝓤} {X} d) x
+ = ℕ∞-equals (λ n → γ x n (discrete-decidable-seq d x x n)) where
+  γ : (x : ℕ → X) (n : ℕ) (d : decidable (x ≡⟦ n ⟧ x))
+    → discrete-seq-c'' x x n d ≡ ₁
+  γ x n (inl _) = refl
+  γ x n (inr f) = 𝟘-elim (f λ k k≤n → refl)
+pr₁ (pr₂ (discrete-seq-is-codistance {𝓤} {X} d)) x y q
+ = dfunext (fe _ _) (λ n → γ x y n (discrete-decidable-seq d x y n)
+                                   (ap (λ - → pr₁ - n) q)) where
+  γ : (x y : ℕ → X) (n : ℕ) (d : decidable (x ≡⟦ n ⟧ y))
+    → discrete-seq-c'' x y n d ≡ ₁ → x n ≡ y n
+  γ x y n (inl x≡⟦n⟧y) _ = x≡⟦n⟧y n (≤-refl n)
+  γ x y n (inr _) ()
+  δ : (n : ℕ) → pr₁ ∞̇ n ≡ ₁
+  δ n = refl
+pr₁ (pr₂ (pr₂ (discrete-seq-is-codistance {𝓤} {X} d))) x y
+ = ℕ∞-equals (λ n → γ x y n (discrete-decidable-seq d x y n) (discrete-decidable-seq d y x n)) where
+  γ : (x y : ℕ → X) (n : ℕ)
+    → (d₁ : decidable (x ≡⟦ n ⟧ y)) (d₂ : decidable (y ≡⟦ n ⟧ x))
+    → discrete-seq-c'' x y n d₁ ≡ discrete-seq-c'' y x n d₂
+  γ x y n (inl   _   ) (inl   _   ) = refl
+  γ x y n (inl x≡⟦n⟧y) (inr   g   ) = 𝟘-elim (g (λ k k<n → x≡⟦n⟧y k k<n ⁻¹))
+  γ x y n (inr   f   ) (inl y≡⟦n⟧x) = 𝟘-elim (f (λ k k<n → y≡⟦n⟧x k k<n ⁻¹))
+  γ x y n (inr   _   ) (inr   _   ) = refl
+pr₂ (pr₂ (pr₂ (discrete-seq-is-codistance d))) x y z n = γ n (discrete-decidable-seq d x y n) (discrete-decidable-seq d y z n) (discrete-decidable-seq d x z n) where
+  γ : (n : ℕ)
+    → (d₁ : decidable (x ≡⟦ n ⟧ y))
+    → (d₂ : decidable (y ≡⟦ n ⟧ z))
+    → (d₃ : decidable (x ≡⟦ n ⟧ z))
+    → min𝟚 (discrete-seq-c'' x y n d₁)
+           (discrete-seq-c'' y z n d₂) ≡ ₁
+    → discrete-seq-c'' x z n d₃ ≡ ₁
+  γ n (inl _) (inl _) (inl _) _ = refl
+  γ n (inl x≡⟦n⟧y) (inl y≡⟦n⟧z) (inr h) p = 𝟘-elim (h (λ k k<n → x≡⟦n⟧y k k<n ∙ y≡⟦n⟧z k k<n))
+
+\end{code}
+
+* 2 searchable
+* searchable -> continuous searchable
+* ? continuously searchable + discrete = searchable
+* discrete searchable sequence searchable
+
+\begin{code}
+
+𝟚-is-searchable : searchable 𝟚
+𝟚-is-searchable (p , d) = γ (d ₁) where
+  γ : decidable (p ₁) → Σ x₀ ꞉ 𝟚 , (Σ p → p x₀)
+  γ (inl p₁) = ₁ , (λ _ → p₁)
+  γ (inr f ) = ₀ , δ where
+    δ : Σ p → p ₀
+    δ (₀ , p₀) = p₀
+    δ (₁ , p₁) = 𝟘-elim (f p₁)
+
+\end{code}
+
+searchable-types-are-c-searchable : {X : 𝓤 ̇ } → searchable X → c-searchable X
+searchable-types-are-c-searchable = {!!}
+
+all-discrete-predicates-are-continuous : {X : 𝓤 ̇ } → discrete X
+
+discrete-c-searchable-types-are-searchable : {X : 𝓤 ̇ } → 
