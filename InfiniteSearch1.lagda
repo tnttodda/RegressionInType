@@ -12,7 +12,7 @@ open import Prelude hiding (decidable)
 open import NaturalsOrder
 open import DecidableAndDetachable
 open import GenericConvergentSequence
-open import Two-Properties
+open import Two-Properties hiding (_≥₂_)
 open import UF-Subsingletons
 open import DiscreteAndSeparated
 open import UF-Base
@@ -41,11 +41,17 @@ for this post⦆
 
 \begin{code}
 
+predicate : (X : 𝓤 ̇ ) → (𝓤₀ ⁺) ⊔ 𝓤 ̇
+predicate X = X → 𝓤₀ ̇ 
+
 decidable : 𝓤 ̇ → 𝓤 ̇
 decidable X = X + ¬ X
 
+everywhere-decidable : {X : 𝓤 ̇} → predicate X → 𝓤 ̇
+everywhere-decidable {𝓤} {X} p = Π x ꞉ X , decidable (p x)
+
 d-predicate : 𝓤 ̇ → (𝓤₀ ⁺) ⊔ 𝓤 ̇
-d-predicate X = Σ p ꞉ (X → 𝓤₀ ̇ ) , (Π x ꞉ X , decidable (p x))
+d-predicate X = Σ p ꞉ (X → 𝓤₀ ̇ ) , everywhere-decidable p
 
 \end{code}
 
@@ -56,6 +62,15 @@ x₀ : X such that, if there is some x : X such that p(x), then p(x₀).
 
 searchable : 𝓤 ̇ → (𝓤₀ ⁺) ⊔ 𝓤 ̇
 searchable X = Π (p , _) ꞉ d-predicate X , Σ x₀ ꞉ X , (Σ p → p x₀)
+
+𝟚-is-searchable : searchable 𝟚
+𝟚-is-searchable (p , d) = γ (d ₁) where
+  γ : decidable (p ₁) → Σ x₀ ꞉ 𝟚 , (Σ p → p x₀)
+  γ (inl p₁) = ₁ , (λ _ → p₁)
+  γ (inr f ) = ₀ , δ where
+    δ : Σ p → p ₀
+    δ (₀ , p₀) = p₀
+    δ (₁ , p₁) = 𝟘-elim (f p₁)
 
 \end{code}
 
@@ -170,6 +185,9 @@ infinity), encoded as decreasing infinitary binary sequences.
 
 \begin{code}
 
+_≥₂_ : 𝟚 → 𝟚 → 𝓤₀ ̇
+a ≥₂ b = b ≡ ₁ → a ≡ ₁
+
 decreasing-binary-seq : (ℕ → 𝟚) → 𝓤₀ ̇
 decreasing-binary-seq α = Π n ꞉ ℕ , α n ≥₂ α (succ n)
 
@@ -193,12 +211,17 @@ _::_ : {X : 𝓤 ̇ } → X → (ℕ → X) → (ℕ → X)
 (x :: xs) 0        = x
 (x :: xs) (succ n) = xs n
 
-_↑ : ℕ → ℕ∞̇
-0      ↑ = (λ _ → ₀)
-         , (λ _ → id)
-succ n ↑ = (₁ :: pr₁ (n ↑))
-         , induction (λ _ → refl) (λ i _ → pr₂ (n ↑) i)
+repeat : {X : 𝓤 ̇ } → X → (ℕ → X)
+repeat x = λ n → x
 
+_↑ : ℕ → ℕ∞̇
+0      ↑ = repeat ₀       , (λ n ₀≡₁ → ₀≡₁)
+succ n ↑ = ₁ :: pr₁ (n ↑) , γ
+ where
+   γ : decreasing-binary-seq (₁ :: pr₁ (n ↑))
+   γ 0 _ = refl
+   γ (succ k) = pr₂ (n ↑) k
+   
 ∞̇ : ℕ∞̇
 ∞̇ = (λ _ → ₁) , (λ _ _ → refl)
 
@@ -425,20 +448,70 @@ pr₂ (pr₂ (pr₂ (discrete-seq-is-codistance d))) x y z n = γ n (discrete-de
 
 \begin{code}
 
-𝟚-is-searchable : searchable 𝟚
-𝟚-is-searchable (p , d) = γ (d ₁) where
-  γ : decidable (p ₁) → Σ x₀ ꞉ 𝟚 , (Σ p → p x₀)
-  γ (inl p₁) = ₁ , (λ _ → p₁)
-  γ (inr f ) = ₀ , δ where
-    δ : Σ p → p ₀
-    δ (₀ , p₀) = p₀
-    δ (₁ , p₁) = 𝟘-elim (f p₁)
+_is-u-mod-of_on_ : {X : 𝓤 ̇ } → ℕ → predicate X → (X × X → ℕ∞) → 𝓤 ̇ 
+_is-u-mod-of_on_ {𝓤} {X} δ p c = Π (x , y) ꞉ (X × X) , ((δ ↑) ≼ c (x , y) → p x → p y)
+
+u-continuous : {X : 𝓤 ̇ } → (X × X → ℕ∞) → predicate X → 𝓤 ̇
+u-continuous {𝓤} {X} c p = Σ δ ꞉ ℕ , δ is-u-mod-of p on c 
+
+uc-d-predicate : (X : 𝓤 ̇ ) → (X × X → ℕ∞) → (𝓤₀ ⁺) ⊔ 𝓤 ̇
+uc-d-predicate X c = Σ p ꞉ predicate X , everywhere-decidable p × u-continuous c p
+
+c-searchable : (X : 𝓤 ̇ ) → (X × X → ℕ∞) → (𝓤₀ ⁺) ⊔ 𝓤 ̇
+c-searchable X c = Π (p  , _) ꞉ uc-d-predicate X c , Σ x₀ ꞉ X , (Σ p → p x₀)
+
+searchable→c-searchable : {X : 𝓤 ̇ } → (c : X × X → ℕ∞) → searchable X → c-searchable X c
+searchable→c-searchable c S (p , d , ϕ) = S (p , d)
+
+all-discrete-predicates-are-continuous : {X : 𝓤 ̇ } → (d : is-discrete X) → d-predicate X → uc-d-predicate X (discrete-codistance d)
+all-discrete-predicates-are-continuous {𝓤} {X} ds (p , d) = p , d , (1 , λ (x , y) → γ x y (ds x y))
+ where
+   γ : (x y : X) → (q : decidable (x ≡ y)) → (1 ↑) ≼̇ discrete-c' (x , y) q → p x → p y
+   γ x .x (inl refl) 1≼∞ px = px
+   γ x  y (inr  _  ) 1≼0 _  = 𝟘-elim (zero-is-not-one (1≼0 0 refl))
+
+c-searchable-discrete→searchable : {X : 𝓤 ̇ } → (d : is-discrete X) → c-searchable X (discrete-codistance d) → searchable X
+c-searchable-discrete→searchable ds S (p , d) = S (all-discrete-predicates-are-continuous ds (p , d))
+
+→c-searchable : {X : 𝓤 ̇ } → (d : is-discrete X) → c-searchable X (discrete-codistance d) → c-searchable (ℕ → X) (discrete-seq-codistance d)
+
+→c-searchable' : {X : 𝓤 ̇ } → (ds : is-discrete X) → c-searchable X (discrete-codistance ds)
+               → ((p , d) : d-predicate (ℕ → X)) → (δ : ℕ) → δ is-u-mod-of p on (discrete-seq-codistance ds)
+               → Σ x₀ ꞉ (ℕ → X) , (Σ p → p x₀) 
+
+→c-searchable ds S (p , d , δ , ϕ) = →c-searchable' ds S (p , d) δ ϕ
+
+𝓔ℕ→X : {X : 𝓤 ̇ } → (d : is-discrete X) → c-searchable X (discrete-codistance d) → uc-d-predicate (ℕ → X) (discrete-seq-codistance d) → (ℕ → X)
+𝓔ℕ→X ds S pdϕ = pr₁ (→c-searchable ds S pdϕ)
+
+trivial-predicate : {X : 𝓤 ̇ } → (c : X × X → ℕ∞) → uc-d-predicate X c
+trivial-predicate c = (λ _ → 𝟙) , (λ _ → inl *) , (0 , λ x y 0≼cxy → *)
+
+head-predicate : {X : 𝓤 ̇ } → (d : is-discrete X) → c-searchable X (discrete-codistance d) → uc-d-predicate (ℕ → X) (discrete-seq-codistance d)
+                           → (xs : ℕ → X) → uc-d-predicate X (discrete-codistance d)
+head-predicate {𝓤} {X} ds S (p , d , ϕ) xs = all-discrete-predicates-are-continuous ds ((λ x → p (x :: xs)) , (λ x → d (x :: xs)))
+
+tail-predicate : {X : 𝓤 ̇ } → (ds : is-discrete X) → c-searchable X (discrete-codistance ds)
+                           → ((p , d) : d-predicate (ℕ → X)) → (δ : ℕ) → (succ δ) is-u-mod-of p on (discrete-seq-codistance ds)
+                           → Σ (pₜ , dₜ) ꞉ d-predicate (ℕ → X) , δ is-u-mod-of pₜ on (discrete-seq-codistance ds)
+tail-predicate {𝓤} {X} ds S (p , d) δ ϕ = ((λ xs → p (x xs :: xs)) , (λ xs → d (x xs :: xs)))
+                                        , λ (xs , ys) δ≼cxsys → ϕ (x xs :: xs , x ys :: ys)
+                                            {!!}
+ where
+   x : (ℕ → X) → X
+   x xs = pr₁ (S (head-predicate ds S (p , d , succ δ , ϕ) xs))
+
+→c-searchable' ds S (p , d) zero ϕ = xs , λ (ys , pys) → ϕ (ys , xs) (λ _ ()) pys where
+  xs = λ n → pr₁ (S (trivial-predicate (discrete-codistance ds)))
+→c-searchable' ds S (p , d) (succ δ) ϕ = (x :: xs) , γ where
+  IH = tail-predicate ds S (p , d) δ ϕ
+  xs = pr₁ (→c-searchable' ds S (pr₁ IH) δ (pr₂ IH))
+  x = pr₁ (S (head-predicate ds S (p , d , succ δ , ϕ) xs))
+  γ : Σ p → p (x :: xs)
+  γ (ys , pys) = pr₂ (→c-searchable' ds S (pr₁ IH) δ (pr₂ IH))
+                 (ys ∘ succ , {!pr₂ (S (head-predicate ds S (p , d , succ δ , ϕ) xs))!})
+
+ℕ→𝟚-is-searchable : c-searchable (ℕ → 𝟚) (discrete-seq-codistance 𝟚-is-discrete)
+ℕ→𝟚-is-searchable = →c-searchable 𝟚-is-discrete (searchable→c-searchable (discrete-codistance 𝟚-is-discrete) 𝟚-is-searchable)
 
 \end{code}
-
-searchable-types-are-c-searchable : {X : 𝓤 ̇ } → searchable X → c-searchable X
-searchable-types-are-c-searchable = {!!}
-
-all-discrete-predicates-are-continuous : {X : 𝓤 ̇ } → discrete X
-
-discrete-c-searchable-types-are-searchable : {X : 𝓤 ̇ } → 
