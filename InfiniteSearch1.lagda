@@ -1,4 +1,4 @@
-Todd Waugh Ambridge, 17th November 2021
+01Todd Waugh Ambridge, 17th November 2021
 
 Search over uniformly continuous decidable predicates on infinite collections of types.
 
@@ -235,6 +235,12 @@ Given two extended naturals α , β : ℕ∞̇,
 _≼̇_ : ℕ∞̇ → ℕ∞̇ → 𝓤₀ ̇
 (α , _) ≼̇ (β , _) = Π n ꞉ ℕ , (α n ≡ ₁ → β n ≡ ₁)
 
+0-minimal : (α : ℕ∞̇) → (0 ↑) ≼̇ α
+0-minimal α k ()
+
+∞̇-maximal : (α : ℕ∞̇) → α ≼̇ ∞̇  
+∞̇-maximal α k αₖ≡₁ = refl
+
 \end{code}
 
 A binary function c : X × X → ℕ∞ is a codistance function
@@ -439,6 +445,13 @@ pr₂ (pr₂ (pr₂ (discrete-seq-is-codistance d))) x y z n = γ n (discrete-de
   γ n (inl _) (inl _) (inl _) _ = refl
   γ n (inl x≡⟦n⟧y) (inl y≡⟦n⟧z) (inr h) p = 𝟘-elim (h (λ k k<n → x≡⟦n⟧y k k<n ∙ y≡⟦n⟧z k k<n))
 
+important : {X : 𝓤 ̇  } → (ds : is-discrete X) → (α : ℕ → X) → discrete-seq-codistance ds (α , (α 0 :: (α ∘ succ))) ≡ ∞̇
+important ds α = transport (λ - → discrete-seq-codistance ds (α , -) ≡ ∞̇) (dfunext (fe _ _) γ) (pr₁ (discrete-seq-is-codistance ds) α)
+ where
+   γ : α ∼ (α 0 :: (α ∘ succ))
+   γ 0 = refl
+   γ (succ n) = refl
+
 \end{code}
 
 * 2 searchable
@@ -481,35 +494,56 @@ c-searchable-discrete→searchable ds S (p , d) = S (all-discrete-predicates-are
 
 →c-searchable ds S (p , d , δ , ϕ) = →c-searchable' ds S (p , d) δ ϕ
 
-𝓔ℕ→X : {X : 𝓤 ̇ } → (d : is-discrete X) → c-searchable X (discrete-codistance d) → uc-d-predicate (ℕ → X) (discrete-seq-codistance d) → (ℕ → X)
-𝓔ℕ→X ds S pdϕ = pr₁ (→c-searchable ds S pdϕ)
-
 trivial-predicate : {X : 𝓤 ̇ } → (c : X × X → ℕ∞) → uc-d-predicate X c
 trivial-predicate c = (λ _ → 𝟙) , (λ _ → inl *) , (0 , λ x y 0≼cxy → *)
 
-head-predicate : {X : 𝓤 ̇ } → (d : is-discrete X) → c-searchable X (discrete-codistance d) → uc-d-predicate (ℕ → X) (discrete-seq-codistance d)
-                           → (xs : ℕ → X) → uc-d-predicate X (discrete-codistance d)
-head-predicate {𝓤} {X} ds S (p , d , ϕ) xs = all-discrete-predicates-are-continuous ds ((λ x → p (x :: xs)) , (λ x → d (x :: xs)))
+build-up : {X : 𝓤 ̇ } → (ds : is-discrete X) → (xs ys : ℕ → X) → (δ : ℕ)
+         → (δ ↑) ≼̇ discrete-seq-codistance ds (xs , ys)
+         → (x : X)
+         → (succ δ ↑) ≼̇ discrete-seq-codistance ds (x :: xs , x :: ys)
+build-up {𝓤} {X} ds xs ys δ δ≼cxsys x n g = γ x n (discrete-decidable-seq ds (x :: xs) (x :: ys) n) where
+  γ : (x : X) (n : ℕ) (d : decidable ((x :: xs) ≡⟦ n ⟧ (x :: ys)))
+    → discrete-seq-c'' (x :: xs) (x :: ys) n d ≡ ₁
+  γ x 0 (inl _) = refl
+  γ x 0 (inr f) = 𝟘-elim (f γ') where
+    γ' : (x :: xs) ≡⟦ zero ⟧ (x :: ys)
+    γ' 0 _ = refl
+  γ x (succ n) (inl x₁) = refl
+  γ x (succ n) (inr x₁) = 𝟘-elim (x₁ {!-- just need equivalence proof!})
+
+head-tail-eta : {X : 𝓤 ̇ } → (xs : ℕ → X) → xs ≡ xs 0 :: (xs ∘ succ)
+head-tail-eta xs = dfunext (fe _ _) γ where
+  γ : xs ∼ xs 0 :: (xs ∘ succ)
+  γ 0 = refl
+  γ (succ n) = refl
 
 tail-predicate : {X : 𝓤 ̇ } → (ds : is-discrete X) → c-searchable X (discrete-codistance ds)
                            → ((p , d) : d-predicate (ℕ → X)) → (δ : ℕ) → (succ δ) is-u-mod-of p on (discrete-seq-codistance ds)
+                           → (x : X)
                            → Σ (pₜ , dₜ) ꞉ d-predicate (ℕ → X) , δ is-u-mod-of pₜ on (discrete-seq-codistance ds)
-tail-predicate {𝓤} {X} ds S (p , d) δ ϕ = ((λ xs → p (x xs :: xs)) , (λ xs → d (x xs :: xs)))
-                                        , λ (xs , ys) δ≼cxsys → ϕ (x xs :: xs , x ys :: ys)
-                                            {!!}
+tail-predicate {𝓤} {X} ds S (p , d) δ ϕ x = ((λ xs → p (x :: xs)) , (λ xs → d (x :: xs)))
+                                          , λ (xs , ys) δ≼cxsys → ϕ (x :: xs , x :: ys)
+                                             (build-up ds xs ys δ δ≼cxsys x)
+
+head-predicate : {X : 𝓤 ̇ } → (ds : is-discrete X) → c-searchable X (discrete-codistance ds)
+                           → ((p , d) : d-predicate (ℕ → X)) → (δ : ℕ) → (succ δ) is-u-mod-of p on (discrete-seq-codistance ds)
+                           → uc-d-predicate X (discrete-codistance ds)
+head-predicate {𝓤} {X} ds S (p , d) δ ϕ = all-discrete-predicates-are-continuous ds ((λ x → p (x :: xs x)) , (λ x → d (x :: xs x)))
  where
-   x : (ℕ → X) → X
-   x xs = pr₁ (S (head-predicate ds S (p , d , succ δ , ϕ) xs))
+   xs : X → ℕ → X
+   xs x = pr₁ (→c-searchable' ds S (pr₁ (tail-predicate ds S (p , d) δ ϕ x)) δ (pr₂ (tail-predicate ds S (p , d) δ ϕ x)))
 
 →c-searchable' ds S (p , d) zero ϕ = xs , λ (ys , pys) → ϕ (ys , xs) (λ _ ()) pys where
   xs = λ n → pr₁ (S (trivial-predicate (discrete-codistance ds)))
+
 →c-searchable' ds S (p , d) (succ δ) ϕ = (x :: xs) , γ where
-  IH = tail-predicate ds S (p , d) δ ϕ
-  xs = pr₁ (→c-searchable' ds S (pr₁ IH) δ (pr₂ IH))
-  x = pr₁ (S (head-predicate ds S (p , d , succ δ , ϕ) xs))
+  x = pr₁ (S (head-predicate ds S (p , d) δ ϕ))
+  IH = λ y → tail-predicate ds S (p , d) δ ϕ y
+  xs = pr₁ (→c-searchable' ds S (pr₁ (IH x)) δ (pr₂ (IH x)))
   γ : Σ p → p (x :: xs)
-  γ (ys , pys) = pr₂ (→c-searchable' ds S (pr₁ IH) δ (pr₂ IH))
-                 (ys ∘ succ , {!pr₂ (S (head-predicate ds S (p , d , succ δ , ϕ) xs))!})
+  γ (ys , pys) = pr₂ (S (head-predicate ds S (p , d) δ ϕ))
+                (ys 0 , pr₂ (→c-searchable' ds S (pr₁ (IH (ys 0))) δ (pr₂ (IH (ys 0))))
+                (ys ∘ succ , transport p (head-tail-eta ys) pys))
 
 ℕ→𝟚-is-searchable : c-searchable (ℕ → 𝟚) (discrete-seq-codistance 𝟚-is-discrete)
 ℕ→𝟚-is-searchable = →c-searchable 𝟚-is-discrete (searchable→c-searchable (discrete-codistance 𝟚-is-discrete) 𝟚-is-searchable)
