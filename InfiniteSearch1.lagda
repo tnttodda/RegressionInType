@@ -1,4 +1,4 @@
-01Todd Waugh Ambridge, 17th November 2021
+Todd Waugh Ambridge, 17th November 2021
 
 Search over uniformly continuous decidable predicates on infinite collections of types.
 
@@ -20,7 +20,7 @@ open import UF-FunExt
 open import UF-Subsingletons
 open import UF-Subsingletons-FunExt
 
-module InfiniteSearch1 (fe : FunExt) where
+module InfiniteSearch1 (fe : {𝓤 𝓥 : Universe} → {X : 𝓤 ̇ } {Y : X → 𝓥 ̇ } {f g : Π Y} → f ∼ g → f ≡ g) where
 
 \end{code}
 
@@ -272,6 +272,14 @@ if it satisfies the below.
 
 \begin{code}
 
+record has-codistance (X : 𝓤 ̇ ) : 𝓤 ̇ where
+  field
+    c : X × X → ℕ∞̇ 
+    equal-are-infinitely-close : (x     : X) → c (x , x) ≡ ∞̇
+    infinitely-close-are-equal : (x y   : X) → c (x , y) ≡ ∞̇ → x ≡ y
+    symmetricity : (x y   : X) → c (x , y) ≡ c (y , x)
+    ultrametric : (x y z : X) → min (c (x , y)) (c (y , z)) ≼̇ c (x , z)
+
 is-codistance : {X : 𝓤 ̇ } → (X × X → ℕ∞̇) → 𝓤 ̇
 is-codistance {𝓤} {X} c
   = ((x     : X) → c (x , x) ≡ ∞̇)
@@ -318,56 +326,58 @@ The codistance function for a discrete type is defined easily by cases:
 \begin{code}
 
 discrete-c' : {X : 𝓤 ̇ } → ((x , y) : X × X) → decidable (x ≡ y) → ℕ∞̇
-discrete-c' (x , y) (inl _) = ∞̇
-discrete-c' (x , y) (inr _) = 0 ↑
+discrete-c' (x , y) (inl x≡y) = ∞̇
+discrete-c' (x , y) (inr x≢y) = 0 ↑
 
-discrete-c'-property₁ : {X : 𝓤 ̇ } → (x : X)
-                      → (dxx : decidable (x ≡ x))
-                      → discrete-c' (x , x) dxx ≡ ∞̇
-discrete-c'-property₁ x (inl  _ ) = refl
-discrete-c'-property₁ x (inr x≢x) = 𝟘-elim (x≢x refl)
+discrete-c'-eic : {X : 𝓤 ̇ } → (x : X)
+                → (dxx : decidable (x ≡ x))
+                → discrete-c' (x , x) dxx ≡ ∞̇
+discrete-c'-eic x (inl x≡x) = refl
+discrete-c'-eic x (inr x≢x) = 𝟘-elim (x≢x refl)
 
-discrete-c'-property₂ : {X : 𝓤 ̇ } → (x y : X)
+discrete-c'-ice : {X : 𝓤 ̇ } → (x y : X)
                       → (dxy : decidable (x ≡ y))
                       → discrete-c' (x , y) dxy ≡ ∞̇ → x ≡ y
-discrete-c'-property₂ x .x (inl refl) _   = refl
-discrete-c'-property₂ x  y (inr  _  ) 0≡∞
- = 𝟘-elim (zero-is-not-one (ap (λ - → pr₁ - 0) 0≡∞))
+discrete-c'-ice x y (inl x≡y) cxy≡∞ = x≡y
+discrete-c'-ice x y (inr x≢y) cxy≡∞ = 𝟘-elim (Zero-not-∞ cxy≡∞)
+ where
+   Zero-not-∞ : (0 ↑) ≢ ∞̇
+   Zero-not-∞ 0≡∞ = 𝟘-elim (zero-is-not-one (ap (λ - → pr₁ - 0) 0≡∞))
                                  
-discrete-c'-property₃ : {X : 𝓤 ̇ } → (x y : X)
-                      → (dxy : decidable (x ≡ y))
-                      → (dyx : decidable (y ≡ x))
-                      → discrete-c' (x , y) dxy ≡ discrete-c' (y , x) dyx
-discrete-c'-property₃ x  y (inl  _  ) (inl  _  ) = refl
-discrete-c'-property₃ x  y (inr  _  ) (inr  _  ) = refl
-discrete-c'-property₃ x .x (inl refl) (inr x≢x ) = 𝟘-elim (x≢x refl)
-discrete-c'-property₃ x .x (inr x≢x ) (inl refl) = 𝟘-elim (x≢x refl)
+discrete-c'-sym : {X : 𝓤 ̇ } → (x y : X)
+                → (dxy : decidable (x ≡ y))
+                → (dyx : decidable (y ≡ x))
+                → discrete-c' (x , y) dxy ≡ discrete-c' (y , x) dyx
+discrete-c'-sym x y (inl x≡y) (inl y≡x) = refl
+discrete-c'-sym x y (inr x≢y) (inr y≢x) = refl
+discrete-c'-sym x y (inl x≡y) (inr y≢x) = 𝟘-elim (y≢x (x≡y ⁻¹))
+discrete-c'-sym x y (inr x≢y) (inl y≡x) = 𝟘-elim (x≢y (y≡x ⁻¹))
                                            
-discrete-c'-property₄ : {X : 𝓤 ̇ } → (x y z : X)
-                      → (dxy : decidable (x ≡ y))
-                      → (dyz : decidable (y ≡ z))
-                      → (dxz : decidable (x ≡ z))
-                      → min (discrete-c' (x , y) dxy)
-                            (discrete-c' (y , z) dyz)
-                          ≼̇ discrete-c' (x , z) dxz
-discrete-c'-property₄ x  y  z       _          _    (inl  _ ) _ _ = refl
-discrete-c'-property₄ x  y  z (inl  _  ) (inr  _  ) (inr  _ ) _   = id
-discrete-c'-property₄ x  y  z (inr  _  )       _    (inr  _ ) _   = id
-discrete-c'-property₄ x .x .x (inl refl) (inl refl) (inr x≢x)     = 𝟘-elim (x≢x refl)
+discrete-c'-ult : {X : 𝓤 ̇ } → (x y z : X)
+                → (dxy : decidable (x ≡ y))
+                → (dyz : decidable (y ≡ z))
+                → (dxz : decidable (x ≡ z))
+                → min (discrete-c' (x , y) dxy) (discrete-c' (y , z) dyz)
+                     ≼̇ discrete-c' (x , z) dxz
+discrete-c'-ult x  y  z       _          _    (inl  _ ) _ _ = refl
+discrete-c'-ult x  y  z (inl  _  ) (inr  _  ) (inr  _ ) _   = id
+discrete-c'-ult x  y  z (inr  _  )       _    (inr  _ ) _   = id
+discrete-c'-ult x .x .x (inl refl) (inl refl) (inr x≢x)     = 𝟘-elim (x≢x refl)
 
 discrete-codistance : {X : 𝓤 ̇ } → is-discrete X → (X × X → ℕ∞̇)
 discrete-codistance d (x , y) = discrete-c' (x , y) (d x y)
 
-discrete-is-codistance : {X : 𝓤 ̇ } → (d : is-discrete X)
-                       → is-codistance (discrete-codistance d)
-pr₁ (discrete-is-codistance           {𝓤} {X} d)   x
- = discrete-c'-property₁ x     (d x x)
-pr₁ (pr₂ (discrete-is-codistance      {𝓤} {X} d))  x y
- = discrete-c'-property₂ x y   (d x y)
-pr₁ (pr₂ (pr₂ (discrete-is-codistance {𝓤} {X} d))) x y
- = discrete-c'-property₃ x y   (d x y) (d y x)
-pr₂ (pr₂ (pr₂ (discrete-is-codistance {𝓤} {X} d))) x y z
- = discrete-c'-property₄ x y z (d x y) (d y z) (d x z)
+discrete-is-codistance : {X : 𝓤 ̇ } → is-discrete X → has-codistance X
+has-codistance.c   (discrete-is-codistance ds)
+ = discrete-codistance ds
+has-codistance.equal-are-infinitely-close (discrete-is-codistance ds) x
+ = discrete-c'-eic x     (ds x x)
+has-codistance.infinitely-close-are-equal (discrete-is-codistance ds) x y
+ = discrete-c'-ice x y   (ds x y)
+has-codistance.symmetricity               (discrete-is-codistance ds) x y
+ = discrete-c'-sym x y   (ds x y) (ds y x)
+has-codistance.ultrametric                (discrete-is-codistance ds) x y z
+ = discrete-c'-ult x y z (ds x y) (ds y z) (ds x z)
 
 \end{code}
 
@@ -384,15 +394,16 @@ file "Codistance.lagda".
 
 discrete-seq-c'' : {X : 𝓤 ̇ } → ((α , β) : (ℕ → X) × (ℕ → X))
                  → (n : ℕ) → decidable (α ≡⟦ n ⟧ β) → 𝟚
-discrete-seq-c'' (α , β) n (inl _) = ₁
-discrete-seq-c'' (α , β) n (inr _) = ₀
+discrete-seq-c'' (α , β) n (inl α≡⟦n⟧β) = ₁
+discrete-seq-c'' (α , β) n (inr α≡⟦n⟧β) = ₀
 
-discrete-decidable-seq : {X : 𝓤 ̇ } → is-discrete X → (α β : ℕ → X) → (n : ℕ) → decidable (α ≡⟦ n ⟧ β)
+discrete-decidable-seq : {X : 𝓤 ̇ } → is-discrete X
+                       → (α β : ℕ → X) → (n : ℕ) → decidable (α ≡⟦ n ⟧ β)
 discrete-decidable-seq d α β 0 = Cases (d (α 0) (β 0)) (inl ∘ γₗ) (inr ∘ γᵣ)
  where
-   γₗ : α 0 ≡ β 0 → α ≡⟦ zero ⟧ β
+   γₗ : α 0 ≡ β 0 → α ≡⟦ 0 ⟧ β
    γₗ e 0 _ = e
-   γᵣ : ¬ (α 0 ≡ β 0) → ¬ (α ≡⟦ zero ⟧ β)
+   γᵣ : ¬ (α 0 ≡ β 0) → ¬ (α ≡⟦ 0 ⟧ β)
    γᵣ f α≡⟦0⟧β = 𝟘-elim (f (α≡⟦0⟧β 0 *))
 discrete-decidable-seq d α β (succ n)
  = Cases (discrete-decidable-seq d α β n) γ₁ (inr ∘ γ₂)
@@ -426,30 +437,31 @@ discrete-seq-codistance d (α , β)
  , λ n → decreasing1 α β n (discrete-decidable-seq d α β n)
                            (discrete-decidable-seq d α β (succ n))
 
-codistance→stream : {X : 𝓤 ̇ } → (ds : is-discrete X) → (α β : ℕ → X)
-                  → (n : ℕ)
+codistance→stream : {X : 𝓤 ̇ } → (ds : is-discrete X)
+                  → (α β : ℕ → X) → (n : ℕ)
                   → (succ n ↑) ≼̇ discrete-seq-codistance ds (α , β)
                   → α ≡⟦ n ⟧ β
 codistance→stream ds α β n cαβ≼n = γ (discrete-decidable-seq ds α β n) (cαβ≼n n (all-n n))
  where
-   γ : ∀ d → discrete-seq-c'' (α , β) n d ≡ ₁ → α ≡⟦ n ⟧ β
-   γ (inl α≡⟦n⟧β) q = α≡⟦n⟧β
+   γ : (d : decidable (α ≡⟦ n ⟧ β)) → discrete-seq-c'' (α , β) n d ≡ ₁ → α ≡⟦ n ⟧ β
+   γ (inl α≡⟦n⟧β) _ = α≡⟦n⟧β
    all-n : (n : ℕ) → pr₁ (succ n ↑) n ≡ ₁
-   all-n zero = refl
+   all-n 0        = refl
    all-n (succ n) = all-n n
 
-stream→codistance : {X : 𝓤 ̇ } → (ds : is-discrete X) → (α β : ℕ → X)
-                  → (n : ℕ)
+stream→codistance : {X : 𝓤 ̇ } → (ds : is-discrete X)
+                  → (α β : ℕ → X) → (n : ℕ)
                   → α ≡⟦ n ⟧ β
                   → (succ n ↑) ≼̇ discrete-seq-codistance ds (α , β)
 stream→codistance ds α β n α≡⟦n⟧β k nₖ≡₁ = γ (discrete-decidable-seq ds α β k)
  where
-   n≼ : (n k : ℕ) → pr₁ (n ↑) k ≡ ₁ → k < n
-   n≼ (succ n) zero nₖ≡₁ = *
-   n≼ (succ n) (succ k) nₖ≡₁ = n≼ n k nₖ≡₁
-   γ : ∀ d → discrete-seq-c'' (α , β) k d ≡ ₁
-   γ (inl _) = refl
-   γ (inr x) = 𝟘-elim (x λ i i≤k → α≡⟦n⟧β i (≤-trans i k n i≤k (n≼ (succ n) k nₖ≡₁)))
+   n≼ : (k n : ℕ) → pr₁ (n ↑) k ≡ ₁ → k < n
+   n≼ 0        (succ n) nₖ≡₁ = *
+   n≼ (succ k) (succ n) nₖ≡₁ = n≼ k n nₖ≡₁
+   γ : (d : decidable (α ≡⟦ k ⟧ β)) → discrete-seq-c'' (α , β) k d ≡ ₁
+   γ (inl  α≡⟦k⟧β) = refl
+   γ (inr ¬α≡⟦k⟧β)
+    = 𝟘-elim (¬α≡⟦k⟧β (λ i i≤k → α≡⟦n⟧β i (≤-trans i k n i≤k (n≼ k (succ n) nₖ≡₁))))
    
 \end{code}
 
@@ -461,56 +473,97 @@ stream→codistance ds α β n α≡⟦n⟧β k nₖ≡₁ = γ (discrete-decida
 𝟚-is-set ₀ ₀ refl refl = refl
 𝟚-is-set ₁ ₁ refl refl = refl
 
+Π-is-prop2 : {X : 𝓤 ̇ } {Y : X → 𝓥 ̇ } → ((x : X) → is-prop (Y x)) → is-prop (Π Y)
+Π-is-prop2 Y-is-prop f g = fe (λ x → Y-is-prop x (f x) (g x))
+
 ≥₂-is-prop : (a b : 𝟚) → is-prop (a ≥₂ b)
-≥₂-is-prop a b = Π-is-prop (fe _ _) (λ _ → 𝟚-is-set a ₁)
+≥₂-is-prop a b = Π-is-prop2 (λ _ → 𝟚-is-set a ₁)
 
 decreasing-prop : (α : ℕ → 𝟚) → is-prop (decreasing-binary-seq α)
-decreasing-prop α = Π-is-prop (fe _ _) (λ n → ≥₂-is-prop (α n) (α (succ n)))
+decreasing-prop α = Π-is-prop2 (λ n → ≥₂-is-prop (α n) (α (succ n)))
 
-ℕ∞-equals : {α β : ℕ∞̇} → pr₁ α ∼ pr₁ β → α ≡ β
-ℕ∞-equals p = to-subtype-≡ decreasing-prop (dfunext (fe _ _) p)
+seq-equals : {X : 𝓤 ̇ } {α β : ℕ → X} → α ∼ β → α ≡ β
+seq-equals α∼β = fe α∼β
 
-discrete-seq-is-codistance : {X : 𝓤 ̇ } → (d : is-discrete X)
-                           → is-codistance (discrete-seq-codistance d)
-pr₁ (discrete-seq-is-codistance {𝓤} {X} d) x
- = ℕ∞-equals (λ n → γ x n (discrete-decidable-seq d x x n)) where
-  γ : (x : ℕ → X) (n : ℕ) (d : decidable (x ≡⟦ n ⟧ x))
-    → discrete-seq-c'' (x , x) n d ≡ ₁
-  γ x n (inl _) = refl
-  γ x n (inr f) = 𝟘-elim (f λ k k≤n → refl)
-pr₁ (pr₂ (discrete-seq-is-codistance {𝓤} {X} d)) x y q
- = dfunext (fe _ _) (λ n → γ x y n (discrete-decidable-seq d x y n)
-                                   (ap (λ - → pr₁ - n) q)) where
-  γ : (x y : ℕ → X) (n : ℕ) (d : decidable (x ≡⟦ n ⟧ y))
-    → discrete-seq-c'' (x , y) n d ≡ ₁ → x n ≡ y n
-  γ x y n (inl x≡⟦n⟧y) _ = x≡⟦n⟧y n (≤-refl n)
-  γ x y n (inr _) ()
-  δ : (n : ℕ) → pr₁ ∞̇ n ≡ ₁
-  δ n = refl
-pr₁ (pr₂ (pr₂ (discrete-seq-is-codistance {𝓤} {X} d))) x y
- = ℕ∞-equals (λ n → γ x y n (discrete-decidable-seq d x y n) (discrete-decidable-seq d y x n)) where
-  γ : (x y : ℕ → X) (n : ℕ)
-    → (d₁ : decidable (x ≡⟦ n ⟧ y)) (d₂ : decidable (y ≡⟦ n ⟧ x))
-    → discrete-seq-c'' (x , y) n d₁ ≡ discrete-seq-c'' (y , x) n d₂
-  γ x y n (inl   _   ) (inl   _   ) = refl
-  γ x y n (inl x≡⟦n⟧y) (inr   g   ) = 𝟘-elim (g (λ k k<n → x≡⟦n⟧y k k<n ⁻¹))
-  γ x y n (inr   f   ) (inl y≡⟦n⟧x) = 𝟘-elim (f (λ k k<n → y≡⟦n⟧x k k<n ⁻¹))
-  γ x y n (inr   _   ) (inr   _   ) = refl
-pr₂ (pr₂ (pr₂ (discrete-seq-is-codistance d))) x y z n = γ n (discrete-decidable-seq d x y n) (discrete-decidable-seq d y z n) (discrete-decidable-seq d x z n) where
-  γ : (n : ℕ)
-    → (d₁ : decidable (x ≡⟦ n ⟧ y))
-    → (d₂ : decidable (y ≡⟦ n ⟧ z))
-    → (d₃ : decidable (x ≡⟦ n ⟧ z))
-    → min𝟚 (discrete-seq-c'' (x , y) n d₁)
-           (discrete-seq-c'' (y , z) n d₂) ≡ ₁
-    → discrete-seq-c'' (x , z) n d₃ ≡ ₁
-  γ n (inl _) (inl _) (inl _) _ = refl
-  γ n (inl x≡⟦n⟧y) (inl y≡⟦n⟧z) (inr h) p = 𝟘-elim (h (λ k k<n → x≡⟦n⟧y k k<n ∙ y≡⟦n⟧z k k<n))
+sigma-prop-equals : {X : 𝓤 ̇ } {Y : X → 𝓥 ̇ }
+             → {(x₁ , y₁) (x₂ , y₂) : Σ x ꞉ X , Y x}
+             → x₁ ≡ x₂
+             → ((x : X) → is-prop (Y x))
+             → (x₁ , y₁) ≡ (x₂ , y₂)
+sigma-prop-equals {𝓤} {𝓥} {X} {Y} {(x₁ , Yx₁)} {(.x₁ , Yx₂)} refl Y-is-prop
+ = ap (x₁ ,_) (Y-is-prop x₁ Yx₁ Yx₂)
 
-important : {X : 𝓤 ̇  } → (ds : is-discrete X) → (α : ℕ → X) → discrete-seq-codistance ds (α , (α 0 :: (α ∘ succ))) ≡ ∞̇
-important ds α = transport (λ - → discrete-seq-codistance ds (α , -) ≡ ∞̇) (dfunext (fe _ _) γ) (pr₁ (discrete-seq-is-codistance ds) α)
+ℕ∞-equals : {(α , α-dec) (β , β-dec) : ℕ∞̇} → α ∼ β → (α , α-dec) ≡ (β , β-dec)
+ℕ∞-equals α∼β = sigma-prop-equals (seq-equals α∼β) decreasing-prop
+
+\end{code}
+
+\begin{code}
+
+discrete-seq-c''-eic : {X : 𝓤 ̇ } → (α : ℕ → X)
+                     → (n : ℕ) → (d : decidable (α ≡⟦ n ⟧ α))
+                     → discrete-seq-c'' (α , α) n d ≡ ₁
+discrete-seq-c''-eic α n (inl  α≡⟦n⟧α) = refl
+discrete-seq-c''-eic α n (inr ¬α≡⟦n⟧α) = 𝟘-elim (¬α≡⟦n⟧α (λ k k≤n → refl))
+
+discrete-seq-c''-ice : {X : 𝓤 ̇ } → (α β : ℕ → X)
+                     → (n : ℕ) → (d : decidable (α ≡⟦ n ⟧ β))
+                     → discrete-seq-c'' (α , β) n d ≡ ₁
+                     → α n ≡ β n
+discrete-seq-c''-ice α β n (inl  α≡⟦n⟧β) cαβn≡₁ = α≡⟦n⟧β n (≤-refl n)
+discrete-seq-c''-ice α β n (inr ¬α≡⟦n⟧β) ()
+
+discrete-seq-c''-sym : {X : 𝓤 ̇ } (α β : ℕ → X)
+                     → (n : ℕ) → (d₁ : decidable (α ≡⟦ n ⟧ β))
+                                 (d₂ : decidable (β ≡⟦ n ⟧ α))
+                     → discrete-seq-c'' (α , β) n d₁ ≡ discrete-seq-c'' (β , α) n d₂
+discrete-seq-c''-sym x y n (inl  α≡⟦n⟧β) (inl  β≡⟦n⟧α) = refl
+discrete-seq-c''-sym x y n (inr ¬α≡⟦n⟧β) (inr ¬β≡⟦n⟧α) = refl
+discrete-seq-c''-sym x y n (inl  α≡⟦n⟧β) (inr ¬β≡⟦n⟧α)
+ = 𝟘-elim (¬β≡⟦n⟧α (λ k k<n → α≡⟦n⟧β k k<n ⁻¹))
+discrete-seq-c''-sym x y n (inr ¬α≡⟦n⟧β) (inl  β≡⟦n⟧α)
+ = 𝟘-elim (¬α≡⟦n⟧β (λ k k<n → β≡⟦n⟧α k k<n ⁻¹))
+
+discrete-seq-c''-ult : {X : 𝓤 ̇ } (α β η : ℕ → X)
+                     → (n : ℕ) → (d₁ : decidable (α ≡⟦ n ⟧ β))
+                               → (d₂ : decidable (β ≡⟦ n ⟧ η))
+                               → (d₃ : decidable (α ≡⟦ n ⟧ η))
+                     → min𝟚 (discrete-seq-c'' (α , β) n d₁)
+                            (discrete-seq-c'' (β , η) n d₂) ≡ ₁
+                     → discrete-seq-c'' (α , η) n d₃ ≡ ₁
+discrete-seq-c''-ult α β η n _             _             (inl  α≡⟦n⟧η) _ = refl
+discrete-seq-c''-ult α β η n (inl α≡⟦n⟧β)  (inl  β≡⟦n⟧η) (inr ¬α≡⟦n⟧η) min≡₁
+ = 𝟘-elim (¬α≡⟦n⟧η (λ k k<n → α≡⟦n⟧β k k<n ∙ β≡⟦n⟧η k k<n))
+discrete-seq-c''-ult α β η n (inl  α≡⟦n⟧β) (inr ¬β≡⟦n⟧α) (inr ¬α≡⟦n⟧η) min₁₀≡₁
+ = 𝟘-elim (zero-is-not-one min₁₀≡₁)
+discrete-seq-c''-ult α β η n (inr ¬α≡⟦n⟧β) (inl  β≡⟦n⟧α) (inr ¬α≡⟦n⟧η) min₀₁≡₁
+ = 𝟘-elim (zero-is-not-one min₀₁≡₁)
+discrete-seq-c''-ult α β η n (inr ¬α≡⟦n⟧β) (inr ¬β≡⟦n⟧α) (inr ¬α≡⟦n⟧η) min₀₀≡₁
+ = 𝟘-elim (zero-is-not-one min₀₀≡₁)
+
+discrete-seq-has-codistance : {X : 𝓤 ̇ } → is-discrete X → has-codistance (ℕ → X)
+has-codistance.c (discrete-seq-has-codistance ds) = discrete-seq-codistance ds
+has-codistance.equal-are-infinitely-close (discrete-seq-has-codistance ds) α
+ = ℕ∞-equals (λ n → discrete-seq-c''-eic α n (discrete-decidable-seq ds α α n))
+has-codistance.infinitely-close-are-equal (discrete-seq-has-codistance ds) α β cαβ≡∞
+ = fe (λ n → discrete-seq-c''-ice α β n (discrete-decidable-seq ds α β n) (γ n))
  where
-   γ : α ∼ (α 0 :: (α ∘ succ))
+   γ : (n : ℕ) → discrete-seq-c'' (α , β) n (discrete-decidable-seq ds α β n) ≡ ₁
+   γ n = ap (λ - → pr₁ - n) cαβ≡∞
+has-codistance.symmetricity (discrete-seq-has-codistance ds) α β
+ = ℕ∞-equals (λ n → discrete-seq-c''-sym α β n (discrete-decidable-seq ds α β n)
+                                               (discrete-decidable-seq ds β α n))
+has-codistance.ultrametric (discrete-seq-has-codistance ds) α β η
+ = λ n → discrete-seq-c''-ult α β η n (discrete-decidable-seq ds α β n)
+                                      (discrete-decidable-seq ds β η n)
+                                      (discrete-decidable-seq ds α η n)
+
+important : {X : 𝓤 ̇  } → (ds : is-discrete X)
+          → (α : ℕ → X) → discrete-seq-codistance ds (α , (α 0 :: (α ∘ succ))) ≡ ∞̇
+important ds α = ap (λ - → discrete-seq-codistance ds (α , -)) (fe γ)
+               ∙ has-codistance.equal-are-infinitely-close (discrete-seq-has-codistance ds) α
+ where
+   γ : (α 0 :: (α ∘ succ)) ∼ α
    γ 0 = refl
    γ (succ n) = refl
 
@@ -538,22 +591,27 @@ c-searchable X c = Π (p  , _) ꞉ uc-d-predicate X c , Σ x₀ ꞉ X , (Σ p �
 searchable→c-searchable : {X : 𝓤 ̇ } → (c : X × X → ℕ∞) → searchable X → c-searchable X c
 searchable→c-searchable c S (p , d , ϕ) = S (p , d)
 
-all-discrete-predicates-are-continuous : {X : 𝓤 ̇ } → (d : is-discrete X) → d-predicate X → uc-d-predicate X (discrete-codistance d)
-all-discrete-predicates-are-continuous {𝓤} {X} ds (p , d) = p , d , (1 , λ (x , y) → γ x y (ds x y))
+all-discrete-predicates-are-continuous : {X : 𝓤 ̇ } → (ds : is-discrete X) → d-predicate X
+                                       → uc-d-predicate X (discrete-codistance ds)
+all-discrete-predicates-are-continuous {𝓤} {X} ds (p , d)
+ = p , d , (1 , λ (x , y) → γ x y (ds x y))
  where
    γ : (x y : X) → (q : decidable (x ≡ y)) → (1 ↑) ≼̇ discrete-c' (x , y) q → p x → p y
    γ x .x (inl refl) 1≼∞ px = px
    γ x  y (inr  _  ) 1≼0 _  = 𝟘-elim (zero-is-not-one (1≼0 0 refl))
 
-c-searchable-discrete→searchable : {X : 𝓤 ̇ } → (d : is-discrete X) → c-searchable X (discrete-codistance d) → searchable X
-c-searchable-discrete→searchable ds S (p , d) = S (all-discrete-predicates-are-continuous ds (p , d))
+c-searchable-discrete→searchable : {X : 𝓤 ̇ } → (ds : is-discrete X)
+                                 → c-searchable X (discrete-codistance ds) → searchable X
+c-searchable-discrete→searchable ds S (p , d)
+ = S (all-discrete-predicates-are-continuous ds (p , d))
 
-→c-searchable : {X : 𝓤 ̇ } → (d : is-discrete X) → c-searchable X (discrete-codistance d) → c-searchable (ℕ → X) (discrete-seq-codistance d)
+→c-searchable : {X : 𝓤 ̇ } → (ds : is-discrete X) → c-searchable X (discrete-codistance ds)
+              → c-searchable (ℕ → X) (discrete-seq-codistance ds)
 
 →c-searchable' : {X : 𝓤 ̇ } → (ds : is-discrete X) → c-searchable X (discrete-codistance ds)
-               → ((p , d) : d-predicate (ℕ → X)) → (δ : ℕ) → δ is-u-mod-of p on (discrete-seq-codistance ds)
+               → ((p , d) : d-predicate (ℕ → X))
+               → (δ : ℕ) → δ is-u-mod-of p on (discrete-seq-codistance ds)
                → Σ x₀ ꞉ (ℕ → X) , (Σ p → p x₀) 
-
 →c-searchable ds S (p , d , δ , ϕ) = →c-searchable' ds S (p , d) δ ϕ
 
 trivial-predicate : {X : 𝓤 ̇ } → (c : X × X → ℕ∞) → uc-d-predicate X c
@@ -572,26 +630,31 @@ build-up {𝓤} {X} ds xs ys δ δ≼cxsys x
    γ (succ δ) δ≼cxsys (succ k) k≤n = codistance→stream ds xs ys δ δ≼cxsys k k≤n
   
 head-tail-eta : {X : 𝓤 ̇ } → (xs : ℕ → X) → xs ≡ xs 0 :: (xs ∘ succ)
-head-tail-eta xs = dfunext (fe _ _) γ where
+head-tail-eta xs = fe γ where
   γ : xs ∼ xs 0 :: (xs ∘ succ)
   γ 0 = refl
   γ (succ n) = refl
 
 tail-predicate : {X : 𝓤 ̇ } → (ds : is-discrete X) → c-searchable X (discrete-codistance ds)
-                           → ((p , d) : d-predicate (ℕ → X)) → (δ : ℕ) → (succ δ) is-u-mod-of p on (discrete-seq-codistance ds)
-                           → (x : X)
-                           → Σ (pₜ , dₜ) ꞉ d-predicate (ℕ → X) , δ is-u-mod-of pₜ on (discrete-seq-codistance ds)
+               → ((p , d) : d-predicate (ℕ → X))
+               → (δ : ℕ) → (succ δ) is-u-mod-of p on (discrete-seq-codistance ds)
+               → (x : X)
+               → Σ (pₜ , dₜ) ꞉ d-predicate (ℕ → X)
+                             , δ is-u-mod-of pₜ on (discrete-seq-codistance ds)
 tail-predicate {𝓤} {X} ds S (p , d) δ ϕ x = ((λ xs → p (x :: xs)) , (λ xs → d (x :: xs)))
                                           , λ (xs , ys) δ≼cxsys → ϕ (x :: xs , x :: ys)
                                              (build-up ds xs ys δ δ≼cxsys x)
 
 head-predicate : {X : 𝓤 ̇ } → (ds : is-discrete X) → c-searchable X (discrete-codistance ds)
-                           → ((p , d) : d-predicate (ℕ → X)) → (δ : ℕ) → (succ δ) is-u-mod-of p on (discrete-seq-codistance ds)
-                           → uc-d-predicate X (discrete-codistance ds)
-head-predicate {𝓤} {X} ds S (p , d) δ ϕ = all-discrete-predicates-are-continuous ds ((λ x → p (x :: xs x)) , (λ x → d (x :: xs x)))
+               → ((p , d) : d-predicate (ℕ → X))
+               → (δ : ℕ) → (succ δ) is-u-mod-of p on (discrete-seq-codistance ds)
+               → uc-d-predicate X (discrete-codistance ds)
+head-predicate {𝓤} {X} ds S (p , d) δ ϕ
+ = all-discrete-predicates-are-continuous ds ((λ x → p (x :: xs x)) , (λ x → d (x :: xs x)))
  where
    xs : X → ℕ → X
-   xs x = pr₁ (→c-searchable' ds S (pr₁ (tail-predicate ds S (p , d) δ ϕ x)) δ (pr₂ (tail-predicate ds S (p , d) δ ϕ x)))
+   xs x = pr₁ (→c-searchable' ds S (pr₁ (tail-predicate ds S (p , d) δ ϕ x))
+           δ (pr₂ (tail-predicate ds S (p , d) δ ϕ x)))
 
 →c-searchable' ds S (p , d) zero ϕ = xs , λ (ys , pys) → ϕ (ys , xs) (λ _ ()) pys where
   xs = λ n → pr₁ (S (trivial-predicate (discrete-codistance ds)))
@@ -606,6 +669,8 @@ head-predicate {𝓤} {X} ds S (p , d) δ ϕ = all-discrete-predicates-are-conti
                 (ys ∘ succ , transport p (head-tail-eta ys) pys))
 
 ℕ→𝟚-is-searchable : c-searchable (ℕ → 𝟚) (discrete-seq-codistance 𝟚-is-discrete)
-ℕ→𝟚-is-searchable = →c-searchable 𝟚-is-discrete (searchable→c-searchable (discrete-codistance 𝟚-is-discrete) 𝟚-is-searchable)
+ℕ→𝟚-is-searchable
+ = →c-searchable 𝟚-is-discrete
+     (searchable→c-searchable (discrete-codistance 𝟚-is-discrete) 𝟚-is-searchable)
 
 \end{code}
