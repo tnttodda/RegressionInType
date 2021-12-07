@@ -1,4 +1,4 @@
-Todd Waugh Ambridge, 17th November 2021
+Todd Waugh Ambridge, 7th December 2021
 
 Search over uniformly continuous decidable predicates on infinite collections of types.
 
@@ -18,8 +18,8 @@ module InfiniteSearch1 (fe : {𝓤 𝓥 : Universe} → {X : 𝓤 ̇ } {Y : X �
 \end{code}
 
 In LICS 2007, a type X is called searchable if, given any predicate p : X → {tt,ff},
-we have some x₀ : X such that p(x₀) ≡ tt if and only if p is satisfied by at least
-one such x : X.
+we can find some x : X such that if there is some x₀ such that p(x₀) ≡ tt
+then also p(x) ≡ tt.
 
 This definition can be written in constructive type theory by using a boolean type
 or, as we do here, using decidable predicates.
@@ -49,12 +49,12 @@ d-predicate X = Σ p ꞉ (X → 𝓤₀ ̇ ) , everywhere-decidable p
 \end{code}
 
 A type is therefore searchable if, given any decidable predicate, we can construct
-x₀ : X such that, if there is some x : X such that p(x), then p(x₀).
+x : X such that, if there is some x₀ : X such that p(x₀), then p(x).
 
 \begin{code}
 
 searchable : 𝓤 ̇ → (𝓤₀ ⁺) ⊔ 𝓤 ̇
-searchable X = Π (p , _) ꞉ d-predicate X , Σ x₀ ꞉ X , (Σ p → p x₀)
+searchable X = Π (p , _) ꞉ d-predicate X , Σ x ꞉ X , (Σ x₀ ꞉ X , p x₀ → p x)
 
 \end{code}
 
@@ -80,16 +80,16 @@ searchable types.
 
 The type of Boolean values 𝟚 ≔ {₀,₁} is searchable by the following argument:
  * Using decidability, we ask if ₁ satisfies the predicate p being searched,
-   i.e. we ask if (p ₁) is inhabited.
- * If (p ₁) is inhabited, then we return ₁ -- thus, trivially, if there is some
-   x₀ : 𝟚 such that (p x₀) then also (p ₁).
- * If (p ₁) is uninhabited (i.e. we have a function of type ¬ (p ₁) ≔ (p ₁) → 𝟘)
+   i.e. we ask if p(₁) is inhabited.
+ * If p(₁), then we return ₁ -- thus, trivially, if there is some x₀ : 𝟚
+   such that p(x₀) then also p(₁).
+ * If p(₁) is uninhabited (i.e. we have a function of type ¬ p(₁) ≔ p(₁) → 𝟘)
    then we return ₀ -- given some x₀ : 𝟚 such that (p x₀) we prove that
    (p ₀) by case analysis of x₀.
-   *  If x₀ = ₀ then (p ₀) is inhabited.
-   *  If x₀ = ₁ then (p ₁) is inhabited. This case is absurd, however, as we
-      already showed that (p ₁) is uninhabited. We discard this case using the
-      elimination rule of the empty type 𝟘.
+   *  If x₀ = ₀ then p(₀).
+   *  If x₀ = ₁ then p(₁). This case is absurd, however, as we already showed
+      that (p ₁) is uninhabited. We discard this case using the elimination rule
+      of the empty type 𝟘.
 
 \begin{code}
 
@@ -176,7 +176,7 @@ to prove that ℕ → 𝟚 is searchable on such explicitly-defined uniformly
 continuous predicates. 
 
 Using the definition of uniform continuity as above, this can be easily
-extended to any type of infinite sequences ℕ → D where D is a discrete type.
+extended to any type of infinite sequences ℕ → X where X is a discrete type.
 
 However, as searchable types coincide with the concept of compactness, we want
 a full-blown constructive formalisation of the Tychonoff theorem:
@@ -185,9 +185,10 @@ Theorem (Tychonoff).
    Given T : ℕ → 𝓤 is a family of types indexed by the natural numbers, such
    that every (T n) : 𝓤 is searchable, the type (Π T) : 𝓤 is searchable.
 
-This theorem of course implies that types ℕ → D are searchable; but in order
-to prove the Tychonoff theorem we need a much more general definition of
-uniform continuity that does not require the types (T n) to be disrete.
+This theorem of course implies that types ℕ → X (where X is discrete) are
+searchable; but in order to prove the Tychonoff theorem we need a much more
+general definition of uniform continuity that does not require the types
+(T n) to be disrete.
 
 We now introduce the idea of a coultrametric type. This is a type X equipped
 with a binary function c : X × X → ℕ∞.
@@ -283,7 +284,7 @@ property) can be defined from a coultrametric easily:
   m : X × X → ℝ
   m (x , y) ≡ 2̂^{ − c(x , y) }
 
-Where, as usual, 2^{−∞} ≡ 0.
+Where, by convention, 2^{−∞} ≡ 0.
 
 \begin{code}
 
@@ -455,7 +456,7 @@ discrete-seq-c'-dec (α , β) n (inr _) (inr _) = 𝟘-elim ∘ zero-is-not-one
 
 discrete-seq-codistance : {X : 𝓤 ̇ } → is-discrete X → ((ℕ → X) × (ℕ → X) → ℕ∞)
 discrete-seq-codistance ds (α , β)
- = (λ n → discrete-seq-c'    (α , β) n (discrete-decidable-seq ds α β       n))
+ = (λ n → discrete-seq-c'     (α , β) n (discrete-decidable-seq ds α β       n))
  , (λ n → discrete-seq-c'-dec (α , β) n (discrete-decidable-seq ds α β       n)
                                         (discrete-decidable-seq ds α β (succ n)))
 
@@ -491,8 +492,8 @@ for any x,y : X, x ≡ x. This means that the type has at most one element.
 
 \begin{code}
 
-is-subsingleton∙ : 𝓤 ̇ → 𝓤 ̇
-is-subsingleton∙ X = (x y : X) → x ≡ y
+is-subsingleton : 𝓤 ̇ → 𝓤 ̇
+is-subsingleton X = (x y : X) → x ≡ y
 
 \end{code}
 
@@ -502,8 +503,8 @@ then Π Y is also a subsingleton.
 \begin{code}
 
 Π-is-subsingleton : {X : 𝓤 ̇ } {Y : X → 𝓥 ̇ }
-                  → ((x : X) → is-subsingleton∙ (Y x))
-                             → is-subsingleton∙ (Π Y)
+                  → ((x : X) → is-subsingleton (Y x))
+                             → is-subsingleton (Π Y)
 Π-is-subsingleton Y-is-prop f g = fe (λ x → Y-is-prop x (f x) (g x))
 
 \end{code}
@@ -512,8 +513,8 @@ A type X is called a 'set' if, for any x,y : X, the type x ≡ y is a subsinglet
 
 \begin{code}
 
-is-set∙ : 𝓤 ̇ → 𝓤 ̇
-is-set∙ X = (x y : X) → is-subsingleton∙ (x ≡ y)
+is-set : 𝓤 ̇ → 𝓤 ̇
+is-set X = (x y : X) → is-subsingleton (x ≡ y)
 
 \end{code}
 
@@ -523,20 +524,20 @@ us to construct (2).
 
 \begin{code}
 
-𝟚-is-set : is-set∙ 𝟚
+𝟚-is-set : is-set 𝟚
 𝟚-is-set ₀ ₀ refl refl = refl
 𝟚-is-set ₁ ₁ refl refl = refl
 
-≥₂-is-prop : (a b : 𝟚) → is-subsingleton∙ (a ≥₂ b)
+≥₂-is-prop : (a b : 𝟚) → is-subsingleton (a ≥₂ b)
 ≥₂-is-prop a b = Π-is-subsingleton (λ _ → 𝟚-is-set a ₁)
 
-decreasing-prop : (α : ℕ → 𝟚) → is-subsingleton∙ (decreasing-binary-seq α)
+decreasing-prop : (α : ℕ → 𝟚) → is-subsingleton (decreasing-binary-seq α)
 decreasing-prop α = Π-is-subsingleton (λ n → ≥₂-is-prop (α n) (α (succ n)))
 
 sigma-prop-equals : {X : 𝓤 ̇ } {Y : X → 𝓥 ̇ }
                   → {(x₁ , y₁) (x₂ , y₂) : Σ x ꞉ X , Y x}
                   → x₁ ≡ x₂
-                  → ((x : X) → is-subsingleton∙ (Y x))
+                  → ((x : X) → is-subsingleton (Y x))
                   → (x₁ , y₁) ≡ (x₂ , y₂)
 sigma-prop-equals {𝓤} {𝓥} {X} {Y} {(x₁ , Yx₁)} {(.x₁ , Yx₂)} refl Y-is-prop
  = ap (x₁ ,_) (Y-is-prop x₁ Yx₁ Yx₂)
@@ -660,21 +661,21 @@ build-up {𝓤} {X} ds xs ys δ δ≼cxsys x
 
 \end{code}
 
-Secondly, the codistance between α : ℕ → X and (head α :: tail α) : ℕ → X is ∞
-because, by function extensionality, α ≡ (head α :: tail α).
+Secondly, by function extensionality, α ≡ (head α :: tail α).
 
 \begin{code}
 
-head-tail-eta : {X : 𝓤 ̇ } → (xs : ℕ → X) → xs ≡ xs 0 :: (xs ∘ succ)
-head-tail-eta xs = fe γ where
-  γ : xs ∼ xs 0 :: (xs ∘ succ)
+head : {X : 𝓤 ̇ } → (ℕ → X) → X
+head α   = α 0
+
+tail : {X : 𝓤 ̇ } → (ℕ → X) → (ℕ → X)
+tail α n = α (succ n)
+
+head-tail-eta : {X : 𝓤 ̇ } → (α : ℕ → X) → α ≡ head α :: (tail α)
+head-tail-eta α = fe γ where
+  γ : α ∼ head α :: (tail α)
   γ 0 = refl
   γ (succ n) = refl
-
-important : {X : 𝓤 ̇  } → (ds : is-discrete X)
-          → (α : ℕ → X) → discrete-seq-codistance ds (α , (α 0 :: (α ∘ succ))) ≡ ∞
-important ds α = ap (λ - → discrete-seq-codistance ds (α , -)) (head-tail-eta α ⁻¹)
-               ∙ has-codistance.equal-are-infinitely-close (discrete-seq-has-codistance ds) α
 
 \end{code}
 
@@ -761,7 +762,7 @@ c-searchable-discrete→searchable ds S (p , d)
 
 \end{code}
 
-Now we come to the main result for this half of the blog post.
+Now we come to the main result for this half.
 
 We wish to show that, for any discrete X, ℕ → X is continuous searchable
 using the discrete sequence codistance.
@@ -788,9 +789,11 @@ we prove the equivalent statement.
 
 \end{code}
 
-The magic (?) of this proof comes from two simple lemmas.
+The magic of this proof of course comes from continuity -- we use two simple lemmas.
 
-Firstly, any uniformly continuous discrete predicate p : uc-d-predicate X c,
+Lemma 1.
+
+Any uniformly continuous discrete predicate p : uc-d-predicate X c,
 for any codistance c : X × X → ℕ∞, with modulus of uniform continuity 0 : ℕ
 is satisfied by any construction of X.
 
@@ -807,12 +810,15 @@ trivial-predicate c = (λ _ → 𝟙) , (λ _ → inl *) , (0 , λ x y 0≼cxy �
 
 \end{code}
 
-Secondly, given any uniformly continuous discrete predicate
-p : uc-d-predicate (ℕ → X) (discrete-seq-codistance ds), where
-ds : is-discrete X, with modulus of uniform continuity (succ δ) : ℕ,
-we can construct the predicate
-(λ xs → x :: xs) : uc-d-predicate (ℕ → X) (discrete-seq-codistance ds) 
-for any x : X which has modulus of uniform continuity δ : ℕ.
+Lemma 2.
+
+Given any uniformly continuous discrete predicate
+p : uc-d-predicate (ℕ → X) _, with modulus of uniform continuity
+(succ δ) : ℕ, we can construct the predicate
+(pₜ x) ≔ (λ xs → x :: xs) : uc-d-predicate (ℕ → X) _,
+for any given x : X, which has modulus of uniform continuity δ : ℕ.
+
+We call (pₜ x) the "tail predicate for p via x".
 
 \begin{code}
 
@@ -825,43 +831,168 @@ tail-predicate-reduce-mod : {X : 𝓤 ̇ } → (ds : is-discrete X) → ((p , d)
                           → (succ δ) is-u-mod-of p on (discrete-seq-codistance ds)
                           →       δ  is-u-mod-of pr₁ (tail-predicate ds (p , d) x)
                                                    on (discrete-seq-codistance ds)
-tail-predicate-reduce-mod {𝓤} {X} ds (p , d) x δ ϕ
- = λ (xs , ys) δ≼cxsys → ϕ (x :: xs , x :: ys) (build-up ds xs ys δ δ≼cxsys x)
+tail-predicate-reduce-mod {𝓤} {X} ds (p , d) x δ ϕ (xs , ys) δ≼cxsys
+ = ϕ (x :: xs , x :: ys) (build-up ds xs ys δ δ≼cxsys x)
+
+\end{code}
+
+Given (pₜ x) for any x : X, we can construct the
+"head predicate" pₕ ≔ (λ x → x :: 𝓔xs x) : d-predicate X where
+𝓔xs x : ℕ → X is the sequence that satisfies (pₜ x).
+
+\begin{code}
 
 head-predicate : {X : 𝓤 ̇ } → (ds : is-discrete X) → searchable X
                → ((p , d) : d-predicate (ℕ → X))
                → (δ : ℕ) → (succ δ) is-u-mod-of p on (discrete-seq-codistance ds)
                → d-predicate X
 head-predicate {𝓤} {X} ds S (p , d) δ ϕ
- = ((λ x → p (x :: xs x)) , (λ x → d (x :: xs x)))
+ = ((λ x → p (x :: 𝓔xs x)) , (λ x → d (x :: 𝓔xs x)))
  where
-   xs : X → (ℕ → X)
-   xs x = pr₁ (→c-searchable' ds S (tail-predicate ds (p , d) x)
+   𝓔xs : X → (ℕ → X)
+   𝓔xs x = pr₁ (→c-searchable' ds S (tail-predicate ds (p , d) x)
            δ (tail-predicate-reduce-mod ds (p , d) x δ ϕ))
 
 \end{code}
 
+We now construct the searcher for the type ℕ → X by induction on
+the modulus of continuity of the predicate being searched.
+
+Recall that in both cases we wish to construct some α : ℕ → X
+such that, if there is α₀ such that p(α₀) then also p(α).
+
+When the modulus of continuity is 0, by Lemma 1 we can return
+any sequence for α. Because X is searchable, it is inhabited by
+some x : X, and so we simply set α ≔ (λ n → x).
+
 \begin{code}
 
-→c-searchable' ds S (p , d) 0        ϕ = xs , λ x → γ x xs where
-  xs = λ n → searchable-types-are-inhabited S
-  γ  : Σ p → Π p
-  γ = 0-mod-always-satisfied (discrete-seq-codistance ds) (p , d) ϕ
+→c-searchable' ds S (p , d) 0        ϕ
+ = α , λ (x₀ , px₀) → γ (x₀ , px₀) α
+ where
+   x = searchable-types-are-inhabited S
+   α = λ n → x
+   γ : Σ p → Π p
+   γ = 0-mod-always-satisfied (discrete-seq-codistance ds) (p , d) ϕ
 
 \end{code}
 
+When the modulus of continuity is (succ δ) : ℕ for some δ : ℕ,
+by Lemma 2 we can construct the tail predicate of p, which has
+modulus of continuity δ : ℕ, for any x : X -- this predicate
+can be searched using the inductive hypothesis.
+
 \begin{code}
 
-→c-searchable' ds S (p , d) (succ δ) ϕ = (x :: xs) , γ where
-  x = pr₁ (S (head-predicate ds S (p , d) δ ϕ))
-  IH = tail-predicate ds (p , d)
-  xs = pr₁ (→c-searchable' ds S (IH x) δ (tail-predicate-reduce-mod ds (p , d) x δ ϕ))
-  γ : Σ p → p (x :: xs)
-  γ (ys , pys) = pr₂ (S (head-predicate ds S (p , d) δ ϕ))
-                (ys 0 , pr₂ (→c-searchable' ds S (IH (ys 0)) δ (tail-predicate-reduce-mod ds (p , d) (ys 0) δ ϕ))
-                (ys ∘ succ , transport p (head-tail-eta ys) pys))
+→c-searchable' {𝓤} {X} ds S (p , d) (succ δ) ϕ = α , γ where
+  pₕ = pr₁ (head-predicate ds S (p , d) δ ϕ)
+  pₜ = λ x' → pr₁ (tail-predicate ds (p , d) x')
 
 \end{code}
+
+Therefore, we can now search X for a solution to pₕ : d-predicate X,
+the head predicate of p, and use the inductive hypothesis to search
+ℕ → X for a solution to (pₜ x') : uc-d-predicate (ℕ → X) _, the tail
+predicate of p via any x' : X.
+
+\begin{code}
+
+  S-head = S (head-predicate ds S (p , d) δ ϕ)
+
+  IH-tail = λ x' → →c-searchable' ds S (tail-predicate ds (p , d) x')
+                      δ (tail-predicate-reduce-mod ds (p , d) x' δ ϕ)
+
+\end{code}
+
+This gives us two constructions:
+
+ 1.  x  : X            s.t. if there is x₀ such that pₕ(x₀)
+                       then also pₕ x,
+
+\begin{code}
+  
+  x  : X
+  x  = pr₁ S-head
+  
+  γₕ : Σ pₕ → pₕ x
+  γₕ = pr₂ S-head
+
+\end{code}
+
+ 2. 𝓔xs : X → (ℕ → X)  s.t., given any x' : X, if there is xs₀
+                       such that (pₜ x')(xs₀) then also (pₜ x')(𝓔xs x').
+
+\begin{code}
+  
+  𝓔xs : X → (ℕ → X)
+  𝓔xs x' = pr₁ (IH-tail x')
+  γₜ  : (x' : X) → Σ (pₜ x') → (pₜ x') (𝓔xs x') 
+  γₜ  x' = pr₂ (IH-tail x')
+
+\end{code}
+
+We set α ≔ (x :: 𝓔xs x).
+
+\begin{code}
+
+  α = x :: 𝓔xs x
+
+  γ : Σ p → p α
+  γ (α₀ , pα₀) = step₆ where
+
+\end{code}
+
+If there is some α₀ such that p(α₀), then also (by function
+extensionality) p(x₀ :: xs₀), where x₀ ≔ head α₀ and xs₀ ≔ tail α₀.
+
+\begin{code}
+
+    x₀  = head α₀
+    xs₀ = tail α₀
+    
+    step₁ : p (x₀ :: xs₀)
+    step₁ = transport p (head-tail-eta α₀) pα₀
+
+\end{code}
+
+Therefore, by definition of pₜ, we have (pₜ x₀)(xs₀) and further,
+by construction of 𝓔xs, we also have    (pₜ x₀)(𝓔xs x₀). 
+
+\begin{code}
+
+    step₂ : (pₜ x₀) xs₀
+    step₂ = step₁
+    
+    step₃ : (pₜ x₀) (𝓔xs x₀)
+    step₃ = γₜ x₀ (xs₀ , step₂)
+
+\end{code}
+
+Note that (pₜ x₀)(𝓔xs x₀) ≡ p(x₀ :: 𝓔xs x₀) ≡ pₕ.
+Therefore, by definition of pₕ, we have pₕ(x₀) and further,
+by construction of x, we also have      pₕ(x).
+
+\begin{code}
+
+    step₄ : pₕ x₀
+    step₄ = step₃
+    
+    step₅ : pₕ x
+    step₅ = γₕ (x₀ , step₄)
+
+\end{code}
+
+Note that pₕ(x) ≡ p (x :: 𝓔xs x), giving us our conclusion.
+
+\begin{code}
+
+    step₆ : p (x :: 𝓔xs x)
+    step₆ = step₅
+
+\end{code}
+
+A corollary to this theorem, of course, is that the Cantor space is
+continuously searchable.
 
 \begin{code}
 
@@ -871,3 +1002,6 @@ head-predicate {𝓤} {X} ds S (p , d) δ ϕ
      (searchable→c-searchable (discrete-codistance 𝟚-is-discrete) 𝟚-is-searchable)
 
 \end{code}
+
+But we still have to prove the full blown Tychonoff theorem using
+codistances and continuously searchable types...
