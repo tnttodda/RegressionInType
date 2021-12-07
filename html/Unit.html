@@ -1,0 +1,22 @@
+<!DOCTYPE HTML>
+<html><head><meta charset="utf-8"><title>Unit</title><link rel="stylesheet" href="Agda.css"></head><body><pre class="Agda"><a id="1" class="Background">One element type.
+
+</a><a id="20" class="Markup">\begin{code}</a>
+
+<a id="34" class="Symbol">{-#</a> <a id="38" class="Keyword">OPTIONS</a> <a id="46" class="Pragma">--without-K</a> <a id="58" class="Pragma">--exact-split</a> <a id="72" class="Pragma">--safe</a> <a id="79" class="Symbol">#-}</a>
+
+<a id="84" class="Keyword">module</a> <a id="91" href="Unit.html" class="Module">Unit</a> <a id="96" class="Keyword">where</a>
+
+<a id="103" class="Keyword">open</a> <a id="108" class="Keyword">import</a> <a id="115" href="Universes.html" class="Module">Universes</a>
+
+<a id="126" class="Keyword">record</a> <a id="𝟙"></a><a id="133" href="Unit.html#133" class="Record">𝟙</a> <a id="135" class="Symbol">{</a><a id="136" href="Unit.html#136" class="Bound">𝓤</a><a id="137" class="Symbol">}</a> <a id="139" class="Symbol">:</a> <a id="141" href="Unit.html#136" class="Bound">𝓤</a> <a id="143" href="Universes.html#403" class="Function Operator">̇</a> <a id="145" class="Keyword">where</a>
+ <a id="152" class="Keyword">constructor</a>
+  <a id="*"></a><a id="166" href="Unit.html#166" class="InductiveConstructor">*</a>
+
+<a id="169" class="Keyword">open</a> <a id="174" href="Unit.html#133" class="Module">𝟙</a> <a id="176" class="Keyword">public</a>
+
+<a id="unique-to-𝟙"></a><a id="184" href="Unit.html#184" class="Function">unique-to-𝟙</a> <a id="196" class="Symbol">:</a> <a id="198" class="Symbol">{</a><a id="199" href="Unit.html#199" class="Bound">A</a> <a id="201" class="Symbol">:</a> <a id="203" href="Universes.html#260" class="Generalizable">𝓤</a> <a id="205" href="Universes.html#403" class="Function Operator">̇</a> <a id="207" class="Symbol">}</a> <a id="209" class="Symbol">→</a> <a id="211" href="Unit.html#199" class="Bound">A</a> <a id="213" class="Symbol">→</a> <a id="215" href="Unit.html#133" class="Record">𝟙</a> <a id="217" class="Symbol">{</a><a id="218" href="Universes.html#262" class="Generalizable">𝓥</a><a id="219" class="Symbol">}</a>
+<a id="221" href="Unit.html#184" class="Function">unique-to-𝟙</a> <a id="233" class="Symbol">{</a><a id="234" href="Unit.html#234" class="Bound">𝓤</a><a id="235" class="Symbol">}</a> <a id="237" class="Symbol">{</a><a id="238" href="Unit.html#238" class="Bound">𝓥</a><a id="239" class="Symbol">}</a> <a id="241" href="Unit.html#241" class="Bound">a</a> <a id="243" class="Symbol">=</a> <a id="245" href="Unit.html#166" class="InductiveConstructor">*</a> <a id="247" class="Symbol">{</a><a id="248" href="Unit.html#238" class="Bound">𝓥</a><a id="249" class="Symbol">}</a>
+
+<a id="252" class="Markup">\end{code}</a><a id="262" class="Background">
+</a></pre></body></html>

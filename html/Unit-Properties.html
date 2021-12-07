@@ -1,0 +1,22 @@
+<!DOCTYPE HTML>
+<html><head><meta charset="utf-8"><title>Unit-Properties</title><link rel="stylesheet" href="Agda.css"></head><body><pre class="Agda"><a id="1" class="Background">One-element type properties.
+
+</a><a id="31" class="Markup">\begin{code}</a>
+
+<a id="45" class="Symbol">{-#</a> <a id="49" class="Keyword">OPTIONS</a> <a id="57" class="Pragma">--without-K</a> <a id="69" class="Pragma">--exact-split</a> <a id="83" class="Pragma">--safe</a> <a id="90" class="Symbol">#-}</a>
+
+<a id="95" class="Keyword">module</a> <a id="102" href="Unit-Properties.html" class="Module">Unit-Properties</a> <a id="118" class="Keyword">where</a>
+
+<a id="125" class="Keyword">open</a> <a id="130" class="Keyword">import</a> <a id="137" href="Universes.html" class="Module">Universes</a>
+<a id="147" class="Keyword">open</a> <a id="152" class="Keyword">import</a> <a id="159" href="Unit.html" class="Module">Unit</a>
+<a id="164" class="Keyword">open</a> <a id="169" class="Keyword">import</a> <a id="176" href="Empty.html" class="Module">Empty</a>
+<a id="182" class="Keyword">open</a> <a id="187" class="Keyword">import</a> <a id="194" href="Id.html" class="Module">Id</a>
+<a id="197" class="Keyword">open</a> <a id="202" class="Keyword">import</a> <a id="209" href="Negation.html" class="Module">Negation</a>
+
+<a id="𝟙-all-*"></a><a id="219" href="Unit-Properties.html#219" class="Function">𝟙-all-*</a> <a id="227" class="Symbol">:</a> <a id="229" class="Symbol">(</a><a id="230" href="Unit-Properties.html#230" class="Bound">x</a> <a id="232" class="Symbol">:</a> <a id="234" href="Unit.html#133" class="Record">𝟙</a> <a id="236" class="Symbol">{</a><a id="237" href="Universes.html#260" class="Generalizable">𝓤</a><a id="238" class="Symbol">})</a> <a id="241" class="Symbol">→</a> <a id="243" href="Unit-Properties.html#230" class="Bound">x</a> <a id="245" href="Identity-Type.html#121" class="Datatype Operator">≡</a> <a id="247" href="Unit.html#166" class="InductiveConstructor">*</a>
+<a id="249" href="Unit-Properties.html#219" class="Function">𝟙-all-*</a> <a id="257" class="Symbol">{</a><a id="258" href="Unit-Properties.html#258" class="Bound">𝓤</a><a id="259" class="Symbol">}</a> <a id="261" href="Unit.html#166" class="InductiveConstructor">*</a> <a id="263" class="Symbol">=</a> <a id="265" href="Identity-Type.html#162" class="InductiveConstructor">refl</a> <a id="270" class="Symbol">{</a><a id="271" href="Unit-Properties.html#258" class="Bound">𝓤</a><a id="272" class="Symbol">}</a>
+<a id="𝟙-is-not-𝟘"></a><a id="274" href="Unit-Properties.html#274" class="Function">𝟙-is-not-𝟘</a> <a id="285" class="Symbol">:</a> <a id="287" href="Unit.html#133" class="Record">𝟙</a> <a id="289" href="Negation.html#253" class="Function Operator">≢</a> <a id="291" href="Empty-Type.html#125" class="Datatype">𝟘</a>
+<a id="293" href="Unit-Properties.html#274" class="Function">𝟙-is-not-𝟘</a> <a id="304" href="Unit-Properties.html#304" class="Bound">p</a> <a id="306" class="Symbol">=</a> <a id="308" href="Id.html#1061" class="Function">transport</a> <a id="318" class="Symbol">(λ</a> <a id="321" href="Unit-Properties.html#321" class="Bound">X</a> <a id="323" class="Symbol">→</a> <a id="325" href="Unit-Properties.html#321" class="Bound">X</a><a id="326" class="Symbol">)</a> <a id="328" href="Unit-Properties.html#304" class="Bound">p</a> <a id="330" href="Unit.html#166" class="InductiveConstructor">*</a>
+
+<a id="333" class="Markup">\end{code}</a><a id="343" class="Background">
+</a></pre></body></html>

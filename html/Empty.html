@@ -1,0 +1,27 @@
+<!DOCTYPE HTML>
+<html><head><meta charset="utf-8"><title>Empty</title><link rel="stylesheet" href="Agda.css"></head><body><pre class="Agda"><a id="1" class="Background">Empty type.
+
+</a><a id="14" class="Markup">\begin{code}</a>
+
+<a id="28" class="Symbol">{-#</a> <a id="32" class="Keyword">OPTIONS</a> <a id="40" class="Pragma">--without-K</a> <a id="52" class="Pragma">--exact-split</a> <a id="66" class="Pragma">--safe</a> <a id="73" class="Symbol">#-}</a>
+
+<a id="78" class="Keyword">module</a> <a id="85" href="Empty.html" class="Module">Empty</a> <a id="91" class="Keyword">where</a>
+
+<a id="98" class="Keyword">open</a> <a id="103" class="Keyword">import</a> <a id="110" href="Empty-Type.html" class="Module">Empty-Type</a> <a id="121" class="Keyword">public</a>
+
+<a id="129" class="Markup">\end{code}</a><a id="139" class="Background">
+
+This should be the only use of the () pattern in this development:
+
+</a><a id="209" class="Markup">\begin{code}</a>
+
+<a id="𝟘-induction"></a><a id="223" href="Empty.html#223" class="Function">𝟘-induction</a> <a id="235" class="Symbol">:</a> <a id="237" class="Symbol">{</a><a id="238" href="Empty.html#238" class="Bound">A</a> <a id="240" class="Symbol">:</a> <a id="242" href="Empty-Type.html#125" class="Datatype">𝟘</a> <a id="244" class="Symbol">{</a><a id="245" href="Universes.html#260" class="Generalizable">𝓤</a><a id="246" class="Symbol">}</a> <a id="248" class="Symbol">→</a> <a id="250" href="Universes.html#262" class="Generalizable">𝓥</a> <a id="252" href="Universes.html#403" class="Function Operator">̇</a> <a id="254" class="Symbol">}</a> <a id="256" class="Symbol">→</a> <a id="258" class="Symbol">(</a><a id="259" href="Empty.html#259" class="Bound">x</a> <a id="261" class="Symbol">:</a> <a id="263" href="Empty-Type.html#125" class="Datatype">𝟘</a><a id="264" class="Symbol">)</a> <a id="266" class="Symbol">→</a> <a id="268" href="Empty.html#238" class="Bound">A</a> <a id="270" href="Empty.html#259" class="Bound">x</a>
+<a id="272" href="Empty.html#223" class="Function">𝟘-induction</a> <a id="284" class="Symbol">=</a> <a id="286" class="Symbol">λ</a> <a id="288" class="Symbol">()</a>
+
+<a id="unique-from-𝟘"></a><a id="292" href="Empty.html#292" class="Function">unique-from-𝟘</a> <a id="306" class="Symbol">:</a> <a id="308" class="Symbol">{</a><a id="309" href="Empty.html#309" class="Bound">A</a> <a id="311" class="Symbol">:</a> <a id="313" href="Universes.html#262" class="Generalizable">𝓥</a> <a id="315" href="Universes.html#403" class="Function Operator">̇</a> <a id="317" class="Symbol">}</a> <a id="319" class="Symbol">→</a> <a id="321" href="Empty-Type.html#125" class="Datatype">𝟘</a> <a id="323" class="Symbol">{</a><a id="324" href="Universes.html#260" class="Generalizable">𝓤</a><a id="325" class="Symbol">}</a> <a id="327" class="Symbol">→</a> <a id="329" href="Empty.html#309" class="Bound">A</a>
+<a id="331" href="Empty.html#292" class="Function">unique-from-𝟘</a> <a id="345" class="Symbol">=</a> <a id="347" href="Empty.html#223" class="Function">𝟘-induction</a>
+
+<a id="𝟘-elim"></a><a id="360" href="Empty.html#360" class="Function">𝟘-elim</a> <a id="367" class="Symbol">=</a> <a id="369" href="Empty.html#292" class="Function">unique-from-𝟘</a>
+
+<a id="384" class="Markup">\end{code}</a><a id="394" class="Background">
+</a></pre></body></html>
