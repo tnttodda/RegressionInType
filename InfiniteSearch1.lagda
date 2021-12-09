@@ -288,9 +288,8 @@ Where, by convention, 2^{−∞} ≡ 0.
 
 \begin{code}
 
-record has-codistance (X : 𝓤 ̇ ) : 𝓤 ̇ where
+record satisfies-codistance-properties {X : 𝓤 ̇ } (c : X × X → ℕ∞) : 𝓤 ̇ where
   field
-    c : X × X → ℕ∞ 
     equal-are-infinitely-close : (x     : X) → c (x , x) ≡ ∞
     infinitely-close-are-equal : (x y   : X) → c (x , y) ≡ ∞ → x ≡ y
     symmetricity : (x y   : X) → c (x , y) ≡ c (y , x)
@@ -378,20 +377,20 @@ discrete-c'-ult x .x .x (inl refl) (inl refl) (inr x≢x)     = 𝟘-elim (x≢x
 
 \end{code}
 
-We can now easily prove that any discrete type has a codistance function.
+We can now easily prove that any discrete type has a codistance function
+that satisfies the necessary properties.
 
 \begin{code}
 
-discrete-is-codistance : {X : 𝓤 ̇ } → is-discrete X → has-codistance X
-has-codistance.c   (discrete-is-codistance ds)
- = discrete-codistance ds
-has-codistance.equal-are-infinitely-close (discrete-is-codistance ds) x
+discrete-is-codistance : {X : 𝓤 ̇ } → (ds : is-discrete X)
+                       → satisfies-codistance-properties (discrete-codistance ds)
+satisfies-codistance-properties.equal-are-infinitely-close (discrete-is-codistance ds) x
  = discrete-c'-eic x     (ds x x)
-has-codistance.infinitely-close-are-equal (discrete-is-codistance ds) x y
+satisfies-codistance-properties.infinitely-close-are-equal (discrete-is-codistance ds) x y
  = discrete-c'-ice x y   (ds x y)
-has-codistance.symmetricity               (discrete-is-codistance ds) x y
+satisfies-codistance-properties.symmetricity               (discrete-is-codistance ds) x y
  = discrete-c'-sym x y   (ds x y) (ds y x)
-has-codistance.ultrametric                (discrete-is-codistance ds) x y z
+satisfies-codistance-properties.ultrametric                (discrete-is-codistance ds) x y z
  = discrete-c'-ult x y z (ds x y) (ds y z) (ds x z)
 
 \end{code}
@@ -592,23 +591,22 @@ discrete-seq-c'-ult α β η n (inr ¬α≡⟦n⟧β) (inl  β≡⟦n⟧α) (inr
 discrete-seq-c'-ult α β η n (inr ¬α≡⟦n⟧β) (inr ¬β≡⟦n⟧α) (inr ¬α≡⟦n⟧η) min₀₀≡₁
  = 𝟘-elim (zero-is-not-one min₀₀≡₁)
 
-discrete-seq-has-codistance : {X : 𝓤 ̇ } → is-discrete X → has-codistance (ℕ → X)
-has-codistance.c (discrete-seq-has-codistance ds) = discrete-seq-codistance ds
-has-codistance.equal-are-infinitely-close (discrete-seq-has-codistance ds) α
+discrete-seq-is-codistance : {X : 𝓤 ̇ } → (ds : is-discrete X)
+                           → satisfies-codistance-properties (discrete-seq-codistance ds)
+satisfies-codistance-properties.equal-are-infinitely-close (discrete-seq-is-codistance ds) α
  = ℕ∞-equals (λ n → discrete-seq-c'-eic α n (discrete-decidable-seq ds α α n))
-has-codistance.infinitely-close-are-equal (discrete-seq-has-codistance ds) α β cαβ≡∞
+satisfies-codistance-properties.infinitely-close-are-equal (discrete-seq-is-codistance ds) α β cαβ≡∞
  = fe (λ n → discrete-seq-c'-ice α β n (discrete-decidable-seq ds α β n) (γ n))
  where
    γ : (n : ℕ) → discrete-seq-c' (α , β) n (discrete-decidable-seq ds α β n) ≡ ₁
    γ n = ap (λ - → pr₁ - n) cαβ≡∞
-has-codistance.symmetricity (discrete-seq-has-codistance ds) α β
+satisfies-codistance-properties.symmetricity (discrete-seq-is-codistance ds) α β
  = ℕ∞-equals (λ n → discrete-seq-c'-sym α β n (discrete-decidable-seq ds α β n)
                                                (discrete-decidable-seq ds β α n))
-has-codistance.ultrametric (discrete-seq-has-codistance ds) α β η
+satisfies-codistance-properties.ultrametric (discrete-seq-is-codistance ds) α β η
  = λ n → discrete-seq-c'-ult α β η n (discrete-decidable-seq ds α β n)
                                       (discrete-decidable-seq ds β η n)
                                       (discrete-decidable-seq ds α η n)
-
 \end{code}
 
 We quickly note two lemmas needed for our main result.
