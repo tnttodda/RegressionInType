@@ -319,8 +319,8 @@ is-discrete X = (x y : X) → decidable (x ≡ y)
 
 The closeness function for a discrete type is defined easily by cases:
                   
-  c (x , y) ≡   ∞    if x ≡ y
-                0 ↑  otherwise
+    c (x , y) ≡   ∞    if x ≡ y
+                  0 ↑  otherwise
 
 ```agda
 discrete-c' : {X : 𝓤 ̇ } → ((x , y) : X × X) → decidable (x ≡ y) → ℕ∞
@@ -401,8 +401,8 @@ is-clofun.ultrametric     (discrete-is-clofun ds) x y z
 The closeness function for a type (ℕ → X) where X is discrete is defined
 pointwise by cases as follows:
 
-  c (α , β) n ≡ ₁,    if x ≡⟦ n ⟧ y,
-                ₀,    otherwise.
+    c (α , β) n ≡ ₁,    if x ≡⟦ n ⟧ y,
+                  ₀,    otherwise.
 
 We again want to use a helper function to allow us to prove properties
 using the Agda synthesizer just by using pattern matching on the type
