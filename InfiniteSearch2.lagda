@@ -1,13 +1,10 @@
-Todd Waugh Ambridge, 7th December 2021
+Search over uniformly continuous decidable predicates on infinite collections of types. (Part 2)
 
-Search over uniformly continuous decidable predicates on infinite collections of types.
-Part 2
-
-Related reading: "Infinite sets that admit fast exhaustive search" (Escardó, LICS 2007)
+Todd Waugh Ambridge, 17th January 2022
 
 \begin{code}
 
-{-# OPTIONS --without-K --exact-split --safe #-}
+{-# OPTIONS --without-K --exact-split --allow-unsolved-metas #-}
 
 open import SpartanMLTT hiding (decidable)
 open import NaturalsOrder
@@ -17,9 +14,139 @@ open import GenericConvergentSequence hiding (ℕ∞;∞;_≼_;∞-maximal)
 module InfiniteSearch2 (fe : {𝓤 𝓥 : Universe} → {X : 𝓤 ̇ } {Y : X → 𝓥 ̇ } {f g : Π Y} → f ∼ g → f ≡ g) where
 
 open import InfiniteSearch1 fe
+  hiding ( head ; tail
+         ; _::_ ; head-tail-eta
+         ; tail-predicate
+         ; tail-predicate-reduce-mod
+         ; head-predicate
+         ; build-up)
+
+\end{code}
+
+Table of Contents:
+ 1. Introduce Π and Π-clofun
+ . Reintroduce concepts from previous and
+    show this is the same as previous discrete-seq-clofun
+ 3. Show Π-clofun satisfies all the properties
+ 4. First attempt and continuity condition
+    (Could the condition be weaker?
+    Perhaps, but for now it suits
+    the purposes we wish for it;
+    notably:.)
+ 5. Tychonoff theorem
+ 6. Corollaries
+
+**Overview:**
+
+In my previous blog post, I layed the groundwork necessary to safely formalise
+the Tychonoff theorem in constructive type theory.
+
+I re-introduced the notion of searchable types -- types X that exhibit a selection
+function that, given any predicate, return an element of X satisfying the predicate
+if at least one such element exists. I also introduced the notion of closeness
+functions; our version of metrics that allow us to define uniformly continuous
+decidable predicates. A type is continuously searchable if we can exhibit a selection
+function that works on all uniformly continuous predicates.
+
+We now turn our attention to formalising the Tyconoff theorem for searchable types that
+have a closeness function. Another version of the Tychonoff theorem for searchable types
+has been previously formalised by Martín Escardó with Agda’s termination checker turned off;
+the addition of closeness functions allows the proof to terminate, but adds extra
+steps to it as we must prove that everything is continuous.
+
+**A closeness function for Π-types**
+
+In topology, the Tychonoff theorem states that arbitrary products of compact spaces
+are themselves compact. As searchable types coincide with the concept of compactness,
+and infinite products are constructed using the Π-type, we restate the Tychonoff theorem
+using our two key notions of continuous searchability and closeness functions:
+
+Theorem (Tychonoff). Given a family of types indexed by the natural numbers T : ℕ → 𝓤,
+such that every (T n) : 𝓤 is continuously searchable and is equipped with a closeness
+function of type T n × T n → ℕ∞, the type Π T : 𝓤 ̇ is continuously searchable.
+
+Of course, in order to prove Π T can be continuously searchable, we must first
+provide a closeness function for that type.
+
+An infinite sequence of types, each with a closeness function, is defined
+as follows.
+
+\begin{code}
 
 sequence-of-codistance-types : 𝓤₁ ̇ 
 sequence-of-codistance-types = Σ T ꞉ (ℕ → 𝓤₀ ̇ ) , Π n ꞉ ℕ , (T n × T n → ℕ∞)
+
+_::_ : {T : ℕ → 𝓤 ̇ } → T 0 → Π (T ∘ succ) → Π T
+(x :: xs) 0 = x
+(x :: xs) (succ n) = xs n
+
+head : {T : ℕ → 𝓤₀ ̇ } → Π T → T 0
+head α = α 0
+
+-- tail' : (T : ℕ → 𝓤 ̂̇ ) → 
+
+tail : {T : ℕ → 𝓤 ̇ } → Π T → Π (T ∘ succ)
+tail α = α ∘ succ
+
+head-tail-eta : {T : ℕ → 𝓤₀ ̇ } → (α : Π T) → α ≡ head α :: tail α
+head-tail-eta α = fe γ where
+  γ : α ∼ (head α :: tail α)
+  γ 0 = refl
+  γ (succ n) = refl
+
+\end{code}
+
+We want to determine the closeness c(α , β) : ℕ∞ of two infinite sequences α,β : Π T.
+
+It is straightforward to define this where each T n is discrete (i.e. each
+closeness function cₙ : T n × T n → ℕ∞ is the discrete closeness function).
+
+  c (α , β) n ≡ ₁,    if x ≡⟦ n ⟧ y,
+                ₀,    otherwise.
+
+But how can we determine c(α , β) : ℕ∞ when nothing is assumed about each cₙ, apart
+from that they satisfy the four properties of closeness functions.
+
+First, note that we can compute cₙ(α n , β n) : ℕ∞ for every n : ℕ.
+The following illustrates some potential values of a prefix of these
+closeness functions.
+
+For example, the asterisk * : 𝟚 is defined * ≔ c₂ (α  , β ) 3.
+Of course, * ≡ ₀, because the previous value in the sequence is ₀, and
+every ℕ∞ is decreasing.
+
+    0  1    3  4  5  ⋯
+c₀  ₁  ₁  ₁  ₁  ₁  ₀  ⋯
+c₁  ₁  ₁  ₁  ₁  ₁  ₁  ⋯
+c₂  ₁  ₁  ₀  *  ₀  ₀  ⋯
+c₃  ₀  ₀  ₀  ₀  ₀  ₀  ⋯
+⋯   ⋯  ⋯  ⋯  ⋯  ⋯  ⋯
+
+This square of binary values is infinite in both directions; we in fact
+use this square's diagonals to determine the value c (α , β) : ℕ∞.
+
+Using this illustration, c (α , β) 0 ≡ ₁ as it is the single element of
+the first diagonal. c (α , β) 1 and c (α , β)  are also ₁ because the
+second and third diagonals only feature ones. However, c (α , β) 3 is
+₀, because the fourth diagonal features a ₀ -- we always take the
+minimum value of each diagonal. We know that c (α , β) n ≡ ₀ for all
+n > 3, because c₃ (α 3 , β 3) will appear in every following diagonal,
+always contributing a ₀. This means that our determined closeness value
+is decreasing.
+
+Therefore, we can express the closeness value as follows.
+
+  c (α , β) 0 ≡       c₀ (α 0 , β 0) 0
+  c (α , β) 1 ≡ min𝟚 (c₀ (α 0 , β 0) 1 ,       c₁ (α 1 , β 1) 0)
+  c (α , β)  ≡ min𝟚 (c₀ (α 0 , β 0)  , min𝟚 (c₁ (α 1 , β 1) 1 , c₂ (α  , β ) 0))
+  ⋯
+
+This can be expressed recursively:
+
+  c (α , β) 0        ≡ c₀ (α 0 , β 0) 0
+  c (α , β) (succ n) ≡ min𝟚 (c₀ (α 0 , β 0) (succ n) , c (tail α , tail β) n)
+
+\begin{code}
 
 Π-codistance' : ((T , cs) : sequence-of-codistance-types) → Π T × Π T → (ℕ → 𝟚)
 Π-codistance' (T , cs) (A , B) 0 = pr₁ (cs 0 (A 0 , B 0)) 0
@@ -41,6 +168,37 @@ sequence-of-codistance-types = Σ T ꞉ (ℕ → 𝓤₀ ̇ ) , Π n ꞉ ℕ , (
 Π-codistance : ((T , cs) : sequence-of-codistance-types) → Π T × Π T → ℕ∞
 Π-codistance (T , cs) (A , B) = Π-codistance'     (T , cs) (A , B)
                               , Π-codistance'-dec (T , cs) (A , B)
+
+\end{code}
+
+When every cₙ used is the discrete closeness function, the value of Π-clofun
+is equivalent to that of discrete-seq-clofun defined in the previous blog post.
+
+\begin{code}
+
+SAME : {X : 𝓤₀ ̇ } → (ds : is-discrete X) → (S : c-searchable X (discrete-clofun ds))
+     → (α β : ℕ → X)
+     → (n : ℕ)
+     → (d : decidable (α ≡⟦ n ⟧ β))
+     → Π-codistance' ((λ _ → X) , (λ _ (x , y) → discrete-clofun (λ a b → {!d!}) (x , y))) (α , β) n
+     ≡ discrete-seq-c' (α , β) n d
+SAME ds S α β n = {!!}
+
+{-
+Π-codistance-build : ((T , cs) : sequence-of-codistance-types)
+                   → (P : (ℕ → 𝟚) → 𝓤₀ ̂̇ )
+                   → ((A , B) : Π T × Π T)
+                   → P (pr₁ (cs 0 (A 0 , B 0)) 0)
+                   → ((n : ℕ) → P (pr₁ (cs 0 (A 0 , B 0)) (succ n)))
+                   → ((n : ℕ) → P (Π-codistance' (T , cs) (A , B) n))
+-}
+
+\end{code}
+
+We now show that, if every underlying cₙ satisfies the four properties of a
+closeness function, then so does Π-codistance.
+
+\begin{code}
 
 Π-codistance'-eic : ((T , cs) : sequence-of-codistance-types)
                   → ((n : ℕ) (α : T n) → cs n (α , α) ≡ ∞)
@@ -162,165 +320,331 @@ is-clofun.ultrametric
      (λ n (α , β , ζ) → is-clofun.ultrametric (ss n) α β ζ)
      (A , B , C)
 
-_∷_ : {T : ℕ → 𝓤₀ ̇ } → T 0 → Π (T ∘ succ) → Π T
-(x ∷ xs) 0 = x
-(x ∷ xs) (succ n) = xs n
+\end{code}
 
-head2 : {T : ℕ → 𝓤₀ ̇ } → Π T → T 0
-head2 α = α 0
+**Tychonff Theorem: First Attempt**
 
-tail2 : {T : ℕ → 𝓤₀ ̇ } → Π T → Π (T ∘ succ)
-tail2 α = α ∘ succ
+We can now state the Tychonoff theorem.
 
-head-tail-eta2 : {T : ℕ → 𝓤₀ ̇ } → (α : Π T) → α ≡ head2 α ∷ tail2 α
-head-tail-eta2 α = fe γ where
-  γ : α ∼ (head2 α ∷ tail2 α)
-  γ 0 = refl
-  γ (succ n) = refl
+\begin{code}
 
-_is-u-mod-of_on_and_ : {X : 𝓤 ̇ } {Y : 𝓥 ̇ } → ℕ → (X → Y) → (X × X → ℕ∞) → (Y × Y → ℕ∞) → 𝓤 ̇ 
-δ is-u-mod-of f on cx and cy
- = Π ε ꞉ ℕ , ∀ x₁ x₂ → (δ ↑) ≼ cx (x₁ , x₂) → (ε ↑) ≼ cy (f(x₁) , f(x₂))
+tychonoff-attempt : ((T , cs) : sequence-of-codistance-types)
+                  → ((n : ℕ) → is-clofun (cs n))
+                  → ((n : ℕ) → c-searchable (T n) (cs n))
+                  → c-searchable (Π T) (Π-codistance (T , cs))
+
+tychonoff'-attempt : ((T , cs) : sequence-of-codistance-types)
+                   → ((n : ℕ) → is-clofun (cs n))
+                   → ((n : ℕ) → c-searchable (T n) (cs n))
+                   → ((p , d) : d-predicate (Π T))
+                   → (δ : ℕ) → δ is-u-mod-of p on (Π-codistance (T , cs))
+                   → Σ x₀ ꞉ Π T , (Σ p → p x₀)
+                   
+tychonoff-attempt (T , cs) ss Ss (p , d , δ , ϕ)
+ = tychonoff'-attempt (T , cs) ss Ss (p , d) δ ϕ
+
+tychonoff'-attempt = {!!}
+
+tail-predicate : {T : ℕ → 𝓤₀ ̇ }
+               → ((p , d) : d-predicate (Π T))
+               → (x : T 0) → d-predicate (Π (T ∘ succ))
+tail-predicate (p , d) x = (λ xs → p (x :: xs)) , (λ xs → d (x :: xs))
+
+build-up : ((T , cs) : sequence-of-codistance-types)
+          → ((n : ℕ) → is-clofun (cs n))
+          → (xs ys : Π (T ∘ succ)) → (δ : ℕ)
+          → (δ ↑) ≼ Π-codistance (T ∘ succ , cs ∘ succ) (xs , ys)
+          → (x : T 0)
+          → (succ δ ↑) ≼ Π-codistance (T , cs) (x :: xs , x :: ys)
+build-up (T , cs) ss xs ys δ δ≼cxsys x 0 refl
+ = ap (λ - → pr₁ - 0) (is-clofun.equal→inf-close (ss 0) x)
+build-up (T , cs) ss xs ys δ δ≼cxsys x (succ n) r
+ = Lemma[a≡₁→b≡₁→min𝟚ab≡₁]
+    (ap (λ - → pr₁ - (succ n)) (is-clofun.equal→inf-close (ss 0) x))
+    (δ≼cxsys n r)
+
+tail-predicate-reduce-mod : ((T , cs) : sequence-of-codistance-types)
+                           → (ss : (n : ℕ) → is-clofun (cs n))
+                           → ((p , d) : d-predicate (Π T))
+                           → (x : T 0) → (δ : ℕ)
+                           → (succ δ) is-u-mod-of p on Π-codistance (T , cs)
+                           →       δ  is-u-mod-of (pr₁ (tail-predicate (p , d) x))
+                                                  on Π-codistance ((T ∘ succ) , (cs ∘ succ))
+tail-predicate-reduce-mod (T , cs) ss p x δ ϕ (xs , ys) δ≼cxsys
+ = ϕ (x :: xs , x :: ys) (build-up (T , cs) ss xs ys δ δ≼cxsys x)
+
+head-predicate-attempt : ((T , cs) : sequence-of-codistance-types)
+                       → ((n : ℕ) → is-clofun (cs n))
+                       → ((n : ℕ) → c-searchable (T n) (cs n))
+                       → ((p , d) : d-predicate (Π T))
+                       → (δ : ℕ) → succ δ is-u-mod-of p on (Π-codistance (T , cs))
+                       → uc-d-predicate (T 0) (cs 0)
+head-predicate-attempt (T , cs) ss Ss (p , d) δ ϕ = pₕ , dₕ , succ δ , ϕₕ
+ where
+   𝓔xs : T 0 → Π (T ∘ succ)
+   𝓔xs x
+    = pr₁ (tychonoff'-attempt (T ∘ succ , cs ∘ succ) (ss ∘ succ) (Ss ∘ succ)
+                 (tail-predicate (p , d) x)
+                 δ (tail-predicate-reduce-mod (T , cs) ss (p , d) x δ ϕ))
+   pₕ = λ x → p (x :: 𝓔xs x)
+   dₕ = λ x → d (x :: 𝓔xs x)
+   ϕₕ : succ δ is-u-mod-of pₕ on cs 0
+   ϕₕ (x , y) δ≼cxy = ϕ (x :: 𝓔xs x , y :: 𝓔xs y) γ
+    where
+      γ : (succ δ ↑) ≼ Π-codistance (T , cs) ((x :: 𝓔xs x) , (y :: 𝓔xs y))
+      γ 0 r = δ≼cxy 0 r
+      γ (succ n) r = Lemma[a≡₁→b≡₁→min𝟚ab≡₁]
+                         (δ≼cxy (succ n) r)
+                         γ'
+       where
+         γ' : Π-codistance' (T ∘ succ , cs ∘ succ) (𝓔xs x , 𝓔xs y) n ≡ ₁
+         γ' = {!!}
+
+\end{code}
+
+The difference is that, this time, we have to prove that the head predicate
+is continuous. We avoided this last time by using the fact that every
+predicate on a discrete type is trivially continuous.
+
+The hole that we cannot fill asks us to prove that (𝓔xs x) and (𝓔xs y),
+both of type Π (T ∘ succ) and both candidates for the tail-predicate,
+are close.
+
+Intuitively, our selection functionals should follow a specific search
+strategy -- given the same predicate, they should return the same answer.
+Furthermore, given 'similar' predicates, they should return close answers.
+
+**Continuous condition**
+
+\begin{code}
+
+_is-constant-u-mod-of_on_and_
+ : {X : 𝓤 ̇ } {Y : 𝓥 ̇ } → ℕ → (X → Y) → (X × X → ℕ∞) → (Y × Y → ℕ∞) → 𝓤 ̇ 
+δ is-constant-u-mod-of f on cx and cy
+ = ∀ x₁ x₂ → (δ ↑) ≼ cx (x₁ , x₂) → (δ ↑) ≼ cy (f(x₁) , f(x₂))
 
 continuous-c-searcher : {Y : 𝓤 ̇ } → (cy : Y × Y → ℕ∞) → c-searchable Y cy → (𝓤 ⁺) ̇ 
 continuous-c-searcher {𝓤} {Y} cy Sy
- = {X : 𝓤 ̇ } → (cx : X × X → ℕ∞) → (pds : (x : X) → d-predicate Y)
- → (δ : ℕ) (ϕ : (x : X) → δ is-u-mod-of pr₁ (pds x) on cy)
- → δ is-u-mod-of (λ x → pr₁ (Sy (pr₁ (pds x) , pr₂ (pds x) , δ , ϕ x))) on cx and cy
+ = {X : 𝓤 ̇ } → (cx : X × X → ℕ∞) → (ps : (x : X) → d-predicate Y)
+ → (δ : ℕ) (ϕs : (x : X) → δ is-u-mod-of pr₁ (ps x) on cy)
+ → δ is-constant-u-mod-of (λ x → pr₁ (Sy (pr₁ (ps x) , pr₂ (ps x) , δ , ϕs x))) on cx and cy
+
+𝟚-is-searchable' : ((p , d) : d-predicate 𝟚) → decidable (p ₁) → Σ x₀ ꞉ 𝟚 , (Σ p → p x₀)
+𝟚-is-searchable' (p , d) (inl p₁) = ₁ , (λ _ → p₁)
+𝟚-is-searchable' (p , d) (inr f ) = ₀ , δ where
+    δ : Σ p → p ₀
+    δ (₀ , p₀) = p₀
+    δ (₁ , p₁) = 𝟘-elim (f p₁)
+
+𝟚-is-continuous-c-searcher : continuous-c-searcher
+                               (discrete-clofun 𝟚-is-discrete)
+                               λ (p , d , _) → 𝟚-is-searchable' (p , d) (d ₁)
+𝟚-is-continuous-c-searcher cx ps δ ϕs x₁ x₂ δ≼ n r = {!!}
+{-
+  γ : (d₁ : decidable (pr₁ (ps x₁) ₁))
+    → (d₂ : decidable (pr₁ (ps x₂) ₁))
+    → pr₁ (discrete-clofun 𝟚-is-discrete
+          ((pr₁ (𝟚-is-searchable' (ps x₁) d₁))
+          , (pr₁ (𝟚-is-searchable' (ps x₂) d₂)))) n ≡ ₁
+  γ (inl _) (inl _) = refl
+  γ (inr _) (inr _) = refl
+  γ (inl e) (inr f) = 𝟘-elim (f {!!})
+  γ (inr f) (inl e) = {!!}
+-}
+\end{code}
+
+**Tychonoff Theorem: Second Attempt**
+
+\begin{code}
 
 tychonoff : ((T , cs) : sequence-of-codistance-types)
           → ((n : ℕ) → is-clofun (cs n))
           → (Ss : (n : ℕ) → c-searchable (T n) (cs n))
           → ((n : ℕ) → continuous-c-searcher (cs n) (Ss n))
-          → c-searchable (Π T) (Π-codistance (T , cs))
+          → Σ S ꞉ c-searchable (Π T) (Π-codistance (T , cs))
+          , continuous-c-searcher (Π-codistance (T , cs)) S
 
 tychonoff' : ((T , cs) : sequence-of-codistance-types)
-           → ((n : ℕ) → is-clofun (cs n))
-           → (Ss : (n : ℕ) → c-searchable (T n) (cs n))
-           → ((n : ℕ) → continuous-c-searcher (cs n) (Ss n))
-           → ((p , d) : d-predicate (Π T))
-           → (δ : ℕ) → δ is-u-mod-of p on (Π-codistance (T , cs))
-           → Σ x₀ ꞉ Π T , (Σ p → p x₀)
+            → ((n : ℕ) → is-clofun (cs n))
+            → (Ss : (n : ℕ) → c-searchable (T n) (cs n))
+            → ((n : ℕ) → continuous-c-searcher (cs n) (Ss n))
+            → (δ : ℕ)
+            → Σ S1 ꞉ (((p , d) : d-predicate (Π T))
+                   → δ is-u-mod-of p on (Π-codistance (T , cs))
+                   → Π T)
+            , (((p , d) : d-predicate (Π T))
+                   → (ϕ : δ is-u-mod-of p on (Π-codistance (T , cs)))
+                   → Σ p → p (S1 (p , d) ϕ))
+            × ({X : 𝓤₀ ̇ } (cx : X × X → ℕ∞) → (ps : (x : X) → d-predicate (Π T))
+                   → (ϕs : (x : X) → δ is-u-mod-of pr₁ (ps x) on (Π-codistance (T , cs)))
+                   → δ is-constant-u-mod-of (λ x → S1 (ps x) (ϕs x)) on cx and (Π-codistance (T , cs)))
 
-tychonoff (T , cs) ss Ss ccs (p , d , δ , ϕ) = tychonoff' (T , cs) ss Ss ccs (p , d) δ ϕ
+tychonoff (T , cs) ss Ss ccs = (λ (p , d , δ , ϕ) → pr₁ (γ δ) (p , d) ϕ
+                                                  , pr₁ (pr₂ (γ δ)) (p , d) ϕ)
+                                    , λ cx ps δ ϕ → pr₂ (pr₂ (γ δ)) cx ps ϕ
+ where γ = λ δ → tychonoff' (T , cs) ss Ss ccs δ
 
-tail-predicate2 : {T : ℕ → 𝓤₀ ̇ }
-                → ((p , d) : d-predicate (Π T))
-                → (x : T 0) → d-predicate (Π (T ∘ succ))
-tail-predicate2 (p , d) x = (λ xs → p (x ∷ xs)) , (λ xs → d (x ∷ xs))
-
-build-up2 : ((T , cs) : sequence-of-codistance-types)
-          → ((n : ℕ) → is-clofun (cs n))
-          → (xs ys : Π (T ∘ succ)) → (δ : ℕ)
-          → (δ ↑) ≼ Π-codistance (T ∘ succ , cs ∘ succ) (xs , ys)
-          → (x : T 0)
-          → (succ δ ↑) ≼ Π-codistance (T , cs) (x ∷ xs , x ∷ ys)
-build-up2 (T , cs) ss xs ys δ δ≼cxsys x 0 refl
- = ap (λ - → pr₁ - 0) (is-clofun.equal→inf-close (ss 0) x)
-build-up2 (T , cs) ss xs ys δ δ≼cxsys x (succ n) r
- = Lemma[a≡₁→b≡₁→min𝟚ab≡₁]
-    (ap (λ - → pr₁ - (succ n)) (is-clofun.equal→inf-close (ss 0) x))
-    (δ≼cxsys n r)
-
-tail-predicate2-reduce-mod : ((T , cs) : sequence-of-codistance-types)
-                           → (ss : (n : ℕ) → is-clofun (cs n))
-                           → ((p , d) : d-predicate (Π T))
-                           → (x : T 0) → (δ : ℕ)
-                           → (succ δ) is-u-mod-of p on Π-codistance (T , cs)
-                           →       δ  is-u-mod-of pr₁ (tail-predicate2 (p , d) x)
-                                                  on Π-codistance ((T ∘ succ) , (cs ∘ succ))
-tail-predicate2-reduce-mod (T , cs) ss (p , d) x δ ϕ (xs , ys) δ≼cxsys
- = ϕ (x ∷ xs , x ∷ ys) (build-up2 (T , cs) ss xs ys δ δ≼cxsys x)
-
-its-continuous : ((T , cs) : sequence-of-codistance-types)
-               → (ss : (n : ℕ) → is-clofun (cs n))
-               → (Ss : (n : ℕ) → c-searchable (T n) (cs n))
-               → (ccs : (n : ℕ) → continuous-c-searcher (cs n) (Ss n))
-               → continuous-c-searcher (Π-codistance (T , cs)) (tychonoff (T , cs) ss Ss ccs)
-its-continuous (T , cs) ss Ss ccs cx pds 0 ϕ ε x₁ x₂ δ≼cx₁x₂
- = {!!} -- transport ((ε ↑) ≼_) (is-clofun.equal→inf-close (Π-codistance-is-codistance (T , cs) ss) ? ⁻¹) (∞-maximal (ε ↑))
-its-continuous (T , cs) ss Ss ccs cx pds (succ δ) ϕ ε x₁ x₂ δ≼cx₁x₂ = {!!}
-
-head-predicate2 : ((T , cs) : sequence-of-codistance-types)
+head-predicate : ((T , cs) : sequence-of-codistance-types)
                 → ((n : ℕ) → is-clofun (cs n))
                 → (Ss : (n : ℕ) → c-searchable (T n) (cs n))
                 → ((n : ℕ) → continuous-c-searcher (cs n) (Ss n))
                 → ((p , d) : d-predicate (Π T))
                 → (δ : ℕ) → succ δ is-u-mod-of p on (Π-codistance (T , cs))
                 → uc-d-predicate (T 0) (cs 0)
-head-predicate2 (T , cs) ss Ss ccs (p , d) δ ϕ = pₕ , dₕ , succ δ , ϕₕ
+head-predicate (T , cs) ss Ss ccs (p , d) δ ϕ = pₕ , dₕ , succ δ , ϕₕ
  where
    𝓔xs : T 0 → Π (T ∘ succ)
-   𝓔xs x = pr₁ (tychonoff' (T ∘ succ , cs ∘ succ) (ss ∘ succ) (Ss ∘ succ) (ccs ∘ succ)
-            (tail-predicate2 (p , d) x) δ
-            (tail-predicate2-reduce-mod (T , cs) ss (p , d) x δ ϕ))
-   pₕ = λ x → p (x ∷ 𝓔xs x)
-   dₕ = λ x → d (x ∷ 𝓔xs x)
+   𝓔xs x = pr₁ (tychonoff' (T ∘ succ , cs ∘ succ) (ss ∘ succ) (Ss ∘ succ) (ccs ∘ succ) δ)
+               (tail-predicate (p , d) x)
+               (tail-predicate-reduce-mod (T , cs) ss (p , d) x δ ϕ)
+   pₕ = λ x → p (x :: 𝓔xs x)
+   dₕ = λ x → d (x :: 𝓔xs x)
    ϕₕ : succ δ is-u-mod-of pₕ on cs 0
-   ϕₕ (x , y) δ≼cxy pₕxs = ϕ (x ∷ 𝓔xs x , y ∷ 𝓔xs y) γ pₕxs where
-     ζ : (     δ ↑) ≼ Π-codistance (T ∘ succ , cs ∘ succ) (𝓔xs x , 𝓔xs y)
-     ζ = its-continuous (T ∘ succ , cs ∘ succ) (ss ∘ succ) (Ss ∘ succ) (ccs ∘ succ)
-           (cs 0)
-           (tail-predicate2 (p , d)) δ
-           (λ x' → tail-predicate2-reduce-mod (T , cs) ss (p , d) x' δ ϕ)
-           δ x y ζ'' where
-       ζ'' : (δ ↑) ≼ cs 0 (x , y)
-       ζ'' 0 r = δ≼cxy 0 refl
-       ζ'' (succ n) r = δ≼cxy (succ n) (pr₂ (δ ↑) n r)
-     γ : (succ δ ↑) ≼ Π-codistance (T , cs) ((x ∷ 𝓔xs x) , (y ∷ 𝓔xs y))
-     γ 0 r = δ≼cxy 0 r
-     γ (succ n) r = Lemma[a≡₁→b≡₁→min𝟚ab≡₁] (δ≼cxy (succ n) r) (ζ n r)
-     
-tychonoff' (T , cs) ss Ss ccs (p , d) 0 ϕ = α , (λ (x₀ , px₀) → γ (x₀ , px₀) α)
- where
-   α = λ n → c-searchable-types-are-inhabited (cs n) (Ss n)
-   γ : Σ p → Π p
-   γ = 0-mod-always-satisfied (Π-codistance (T , cs)) (p , d) ϕ
+   ϕₕ (x , y) δ≼cxy pₕxs = ϕ (x :: 𝓔xs x , y :: 𝓔xs y) γ pₕxs where
+     γ : (succ δ ↑) ≼ Π-codistance (T , cs) ((x :: 𝓔xs x) , (y :: 𝓔xs y))
+     γ 0 r = δ≼cxy 0 r -- δ≼cxy 0 r
+     γ (succ n) r = Lemma[a≡₁→b≡₁→min𝟚ab≡₁] (δ≼cxy (succ n) r)
+                      (pr₂ (pr₂ (tychonoff' (T ∘ succ , cs ∘ succ) (ss ∘ succ) (Ss ∘ succ) (ccs ∘ succ) δ))
+                         (cs 0)
+                         (tail-predicate (p , d))
+                         (λ x' → tail-predicate-reduce-mod (T , cs) ss (p , d) x' δ ϕ)
+                         x y ζ n r)
+      where
+        ζ : (δ ↑) ≼ cs 0 (x , y)
+        ζ 0 r = δ≼cxy 0 refl
+        ζ (succ n) r = δ≼cxy (succ n) (pr₂ (δ ↑) n r)
 
-tychonoff' (T , cs) ss Ss ccs (p , d) (succ δ) ϕ = α , γ where
-  pₕ = pr₁ (head-predicate2 (T , cs) ss Ss ccs (p , d) δ ϕ)
-  pₜ = λ x' → pr₁ (tail-predicate2 (p , d) x')
+trivial-seq : ((T , cs) : sequence-of-codistance-types)
+            → ((n : ℕ) → c-searchable (T n) (cs n))
+            → Π T
+trivial-seq (T , cs) Ss n = c-searchable-types-are-inhabited (cs n) (Ss n)
 
-  S-head = Ss 0 (head-predicate2 (T , cs) ss Ss ccs (p , d) δ ϕ)
+tychonoff' (T , cs) ss Ss ccs 0 = Searcher , Condition , Continuous where
+  Searcher : ((p , d) : d-predicate (Π T))
+           → 0 is-u-mod-of p on Π-codistance (T , cs)
+           → Π T
+  Searcher p ϕ n = c-searchable-types-are-inhabited (cs n) (Ss n)
 
-  IH-tail = λ x' → tychonoff' (T ∘ succ , cs ∘ succ) (ss ∘ succ) (Ss ∘ succ) (ccs ∘ succ)
-                     (tail-predicate2 (p , d) x') δ
-                       (tail-predicate2-reduce-mod (T , cs) ss (p , d) x' δ ϕ)
+  Condition : ((p , d) : d-predicate (Π T))
+            → (ϕ : 0 is-u-mod-of p on Π-codistance (T , cs))
+            → Σ p → p (Searcher (p , d) ϕ)
+  Condition p ϕ (α , pα) = 0-mod-always-satisfied (Π-codistance (T , cs)) p ϕ (α , pα) (Searcher p ϕ)
 
-  x : T 0
-  x = pr₁ S-head
+  Continuous : {X : 𝓤₀ ̇ } (cx : X × X → ℕ∞) → (ps : (x : X) → d-predicate (Π T))
+             → (ϕs : (x : X) → 0 is-u-mod-of pr₁ (ps x) on (Π-codistance (T , cs)))
+             → 0 is-constant-u-mod-of (λ x → Searcher (ps x) (ϕs x)) on cx and (Π-codistance (T , cs))
+  Continuous _ ps ϕs x y _ = Zero-minimal (Π-codistance (T , cs) (Searcher (ps x) (ϕs x) , Searcher (ps y) (ϕs y)))
 
-  γₕ : Σ pₕ → pₕ x
-  γₕ = pr₂ S-head -- pr₂ S-head
+tychonoff' (T , cs) ss Ss ccs (succ δ) = Searcher , Condition , Continuous where
+  IH = tychonoff' (T ∘ succ , cs ∘ succ) (ss ∘ succ) (Ss ∘ succ) (ccs ∘ succ) δ
 
-  𝓔xs : T 0 → Π (T ∘ succ)
-  𝓔xs x' = pr₁ (IH-tail x')
+  S-head = λ p ϕ → Ss 0 (head-predicate (T , cs) ss Ss ccs p δ ϕ)
+  
+  x   = λ p ϕ → pr₁ (S-head p ϕ)
+  𝓔xs = λ p ϕ x' → pr₁ IH (tail-predicate p x')
+                          (tail-predicate-reduce-mod (T , cs) ss p x' δ ϕ)
 
-  γₜ : (x' : T 0) → Σ (pₜ x') → (pₜ x') (𝓔xs x')
-  γₜ x' = pr₂ (IH-tail x')
+  Searcher : ((p , d) : d-predicate (Π T))
+           → succ δ is-u-mod-of p on Π-codistance (T , cs)
+           → Π T
+  Searcher p ϕ = x p ϕ :: 𝓔xs p ϕ (x p ϕ)
 
-  α = x ∷ 𝓔xs x
-
-  γ : Σ p → p α
-  γ (α₀ , pα₀) = step₆ where
-
+  Condition : ((p , d) : d-predicate (Π T))
+            → (ϕ : succ δ is-u-mod-of p on Π-codistance (T , cs))
+            → Σ p → p (Searcher (p , d) ϕ)
+  Condition (p , d) ϕ (α₀ , pα₀)
+   = γₕ (x₀ , γₜ x₀ (xs₀ , transport p (head-tail-eta α₀) pα₀)) where
+    γₕ = pr₂ (S-head (p , d) ϕ)
+    γₜ = λ x' → pr₁ (pr₂ IH) (tail-predicate (p , d) x')
+                             (tail-predicate-reduce-mod (T , cs) ss (p , d) x' δ ϕ)
     x₀  = α₀ 0
     xs₀ = α₀ ∘ succ
 
-    step₁ : p (x₀ ∷ xs₀)
-    step₁ = transport p (head-tail-eta2 α₀) pα₀
+  Continuous : {X : 𝓤₀ ̇ } (cx : X × X → ℕ∞) → (ps : (x : X) → d-predicate (Π T))
+             → (ϕs : (x : X) → (succ δ) is-u-mod-of pr₁ (ps x) on (Π-codistance (T , cs)))
+             → (succ δ) is-constant-u-mod-of (λ x → Searcher (ps x) (ϕs x)) on cx and (Π-codistance (T , cs))
+  Continuous cx ps ϕs a b δ≼cxy zero r = A 0 refl where
+    A : (succ δ ↑) ≼ (cs 0) (x (ps a) (ϕs a) , x (ps b) (ϕs b))
+    A = ccs 0 cx (λ x' → (pr₁ (pH x')) , (pr₁ (pr₂ (pH x')))) (succ δ) (λ x' → pr₂ (pr₂ (pr₂ (pH x'))))
+          a b δ≼cxy
+     where
+       pH : ∀ x' → uc-d-predicate (T 0) (cs 0)
+       pH = λ x' → head-predicate (T , cs) ss Ss ccs (ps x') δ (ϕs x')
+  Continuous cx pds ϕs a b δ≼cxy (succ n) r = Lemma[a≡₁→b≡₁→min𝟚ab≡₁] (A (succ n) r) (B n r) where
+    A : (succ δ ↑) ≼ (cs 0) (x (pds a) (ϕs a) , x (pds b) (ϕs b))
+    A = ccs 0 cx (λ x' → (pr₁ (pH x')) , pr₁ (pr₂ (pH x'))) (succ δ) (λ x' → pr₂ (pr₂ (pr₂ (pH x'))))
+          a b δ≼cxy
+     where
+       pH : ∀ x' → uc-d-predicate (T 0) (cs 0)
+       pH = λ x' → head-predicate (T , cs) ss Ss ccs (pds x') δ (ϕs x')
+    B : (     δ ↑) ≼ Π-codistance (T ∘ succ , cs ∘ succ) (𝓔xs (pds a) (ϕs a) (x (pds a) (ϕs a))
+                                                        , 𝓔xs (pds b) (ϕs b) (x (pds b) (ϕs b)))
+    B = pr₂ (pr₂ IH) cx (λ x' → tail-predicate (pds x') (x (pds x') (ϕs x')))
+          (λ x' → tail-predicate-reduce-mod (T , cs) ss (pds x') (x (pds x') (ϕs x')) δ (ϕs x')) a b ζ
+     where
+       ζ : (δ ↑) ≼ cx (a , b)
+       ζ 0 r = δ≼cxy 0 refl
+       ζ (succ n) r = pr₂ (cx (a , b)) (succ n) (δ≼cxy (succ (succ n)) r)
 
-    step₂ : (pₜ x₀) xs₀
-    step₂ = step₁
+YES : {X : 𝓤₀ ̇ } → (ds : is-discrete X) → (S : c-searchable X (discrete-clofun ds))
+    → continuous-c-searcher (discrete-clofun ds) S
+YES ds S cx pds δ ϕs x y δ≼cxy n r = {!!}
 
-    step₃ : (pₜ x₀) (𝓔xs x₀)
-    step₃ = γₜ x₀ (xs₀ , step₂)
+\end{code}
 
-    step₄ : pₕ x₀
-    step₄ = step₃
+→c-searchable : {X : 𝓤₀ ̇ } → (ds : is-discrete X) → c-searchable X (discrete-clofun ds)
+               → Σ (continuous-c-searcher (discrete-seq-clofun ds))
+→c-searchable {X} ds S = transport (λ - → Σ (continuous-c-searcher -))
+                            (fe (λ (α , β) → ℕ∞-equals λ n → SAME ds S α β n
+                                               (discrete-decidable-seq ds α β n)))
+                            (tychonoff ((λ _ → X) , (λ _ → discrete-clofun ds))
+                                       (λ _ → discrete-is-clofun ds)
+                                       (λ _ → S)
+                                       (λ _ → YES ds S))
 
-    step₅ : pₕ x
-    step₅ = γₕ (x₀ , step₄)
+ℕ→𝟚-c-searchable : Σ (continuous-c-searcher (discrete-seq-clofun 𝟚-is-discrete))
+ℕ→𝟚-c-searchable = →c-searchable 𝟚-is-discrete (searchable→c-searchable (discrete-clofun 𝟚-is-discrete) 𝟚-is-searchable)
 
-    step₆ : p (x ∷ 𝓔xs x)
-    step₆ = step₅
+ℕ→ℕ→X-c-searchable : {X : 𝓤₀ ̇ } → (ds : is-discrete X) → c-searchable X (discrete-clofun ds)
+                    → Σ (continuous-c-searcher (Π-codistance ((λ _ → ℕ → X) , (λ _ → discrete-seq-clofun ds))))
+ℕ→ℕ→X-c-searchable {X} ds S = tychonoff ((λ _ → ℕ → X) , (λ _ → discrete-seq-clofun ds))
+                                          (λ _ → discrete-seq-is-clofun ds)
+                                          (λ _ → pr₁ (→c-searchable ds S))
+                                          (λ _ → pr₂ (→c-searchable ds S))
+
+ℕ→ℕ→𝟚-c-searchable : c-searchable (ℕ → (ℕ → 𝟚)) (Π-codistance ((λ _ → ℕ → 𝟚) , (λ _ → discrete-seq-clofun 𝟚-is-discrete)))
+ℕ→ℕ→𝟚-c-searchable = {!!}
+
+𝔽 : ℕ → 𝓤₀ ̇
+𝔽 0 = 𝟙
+𝔽 (succ n) = 𝔽 n + 𝟙
+
+{-
+Π 𝔽 is the type of sequences
+{x₁ , x₂ , x₃ , x₄ , ...}
+where
+x₁ : 𝟙
+x₂ : 𝟙 + 𝟙
+x₃ : 𝟙 + 𝟙 + 𝟙
+x₄ : 𝟙 + 𝟙 + 𝟙 + 𝟙
+...
+-}
+
+Codistance : (n : ℕ) → 𝔽 n × 𝔽 n → ℕ∞
+Codistance 0 (* , *) = ∞
+Codistance (succ n) (inl x , inl y) = Codistance n (x , y)
+Codistance (succ n) (inl _ , inr _) = 0 ↑
+Codistance (succ n) (inr _ , inl _) = 0 ↑
+Codistance (succ n) (inr * , inr *) = ∞
+{-
+Predicate : uc-d-predicate (Π 𝔽) (Π-codistance (𝔽 , Codistance))
+Predicate = p , {!!} , {!!} where
+  (p , d) : d-predicate (Π 𝔽)
+  p α = (n : ℕ) → p* n (α n) where
+    p* : (n : ℕ) → predicate (𝔽 n)
+    p* zero * = 𝟙
+    p* (succ n) (inl _) = 𝟘
+    p* (succ n) (inr *) = 𝟙
+  ϕ : {!!}
+  ϕ = {!!}
+-}
