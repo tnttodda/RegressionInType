@@ -310,17 +310,18 @@ We can now state the Tychonoff theorem.
 
 \begin{code}
 
+they-agree : {X : 𝓤 ̇ } → d-predicate X → d-predicate X → 𝓤 ̇ 
+they-agree {𝓤} {X} (p₁ , d₁) (p₂ , d₂)
+  = ((x : X) → p₁ x → p₂ x) × ((x : X) → p₂ x → p₁ x)
+
 Cont : {X : 𝓤 ̇ } → (c : X × X → ℕ∞) → c-searchable X c → (𝓤₀ ⁺) ⊔ 𝓤 ̇ 
 Cont {𝓤} {X} c S = ((p₁ , d₁) (p₂ , d₂) : d-predicate X)
                  → (δ : ℕ)
                  → (ϕ₁ : δ is-u-mod-of p₁ on c)
                  → (ϕ₂ : δ is-u-mod-of p₂ on c)
+                 → they-agree (p₁ , d₁) (p₂ , d₂)
                  → (δ ↑) ≼ c (pr₁ (S (p₁ , d₁ , δ , ϕ₁))
                             , pr₁ (S (p₂ , d₂ , δ , ϕ₂)))
-
-they-agree : {X : 𝓤 ̇ } → d-predicate X → d-predicate X → 𝓤 ̇ 
-they-agree {𝓤} {X} (p₁ , d₁) (p₂ , d₂)
-  = ((x : X) → p₁ x → p₂ x) × ((x : X) → p₂ x → p₁ x)
 
 tychonoff : ((T , cs) : sequence-of-clofun-types)
           → ((n : ℕ) → is-clofun (cs n))
@@ -374,19 +375,66 @@ tail-predicate-reduce-mod : ((T , cs) : sequence-of-clofun-types)
 tail-predicate-reduce-mod (T , cs) ss p x δ ϕ (xs , ys) δ≼cxsys
  = ϕ (x :: xs , x :: ys) (build-up (T , cs) ss xs ys δ δ≼cxsys x)
 
-
+tail-predicate-agree : ((T , cs) : sequence-of-clofun-types)
+                     → (ss : (n : ℕ) → is-clofun (cs n))
+                     → ((p₁ , d₁) (p₂ , d₂) : d-predicate (Π T))
+                     → they-agree (p₁ , d₁) (p₂ , d₂)
+                     → (x y : T 0) → (δ : ℕ)
+                     → (succ δ) is-u-mod-of p₁ on Π-clofun (T , cs)
+                     → (succ δ) is-u-mod-of p₂ on Π-clofun (T , cs)
+                     → they-agree (tail-predicate (p₁ , d₁) x) (tail-predicate (p₂ , d₂) y)
+tail-predicate-agree (T , cs) ss (p₁ , d₁) (p₂ , d₂) ag x y δ ϕ₁ ϕ₂
+ = {!!}
 
 Conty : ((T , cs) : sequence-of-clofun-types)
       → (ss : (n : ℕ) → is-clofun (cs n))
       → (Ss : (n : ℕ) → c-searchable (T n) (cs n))
       → (ccs : (n : ℕ) → Cont (cs n) (Ss n))
       → ((p₁ , d₁) (p₂ , d₂) : d-predicate (Π T))
+      → they-agree (p₁ , d₁) (p₂ , d₂)
       → (δ : ℕ)
       → (ϕ₁ : δ is-u-mod-of p₁ on Π-clofun (T , cs))
       → (ϕ₂ : δ is-u-mod-of p₂ on Π-clofun (T , cs))
-      → (     δ ↑) ≼ Π-clofun (T , cs)
-                       (Searcher (T , cs) ss Ss ccs (p₁ , d₁) δ ϕ₁
-                      , Searcher (T , cs) ss Ss ccs (p₂ , d₂) δ ϕ₂)
+      → (δ ↑) ≼ Π-clofun (T , cs)
+                  (Searcher (T , cs) ss Ss ccs (p₁ , d₁) δ ϕ₁
+                 , Searcher (T , cs) ss Ss ccs (p₂ , d₂) δ ϕ₂)
+
+𝟚-is-c-searchable'' : (p : 𝟚 → 𝓤 ̇ )
+                    → decidable (p ₁)
+                    → Σ x ꞉ 𝟚 , (Σ p → p x)
+𝟚-is-c-searchable'' p (inl  p₁)
+ = ₁ , λ _ → p₁
+𝟚-is-c-searchable'' p (inr ¬p₁)
+ = ₀ , λ (x₀ , px₀) → 𝟚-equality-cases
+                          (λ e → transport p e px₀)
+                          (λ e → 𝟘-elim (¬p₁ (transport p e px₀)))
+
+𝟚-is-c-searchable' : c-searchable 𝟚 (discrete-clofun 𝟚-is-discrete)
+𝟚-is-c-searchable' (p , d , _ , _) = 𝟚-is-c-searchable'' p (d ₁)
+
+dec-agree : {X : 𝓤 ̇ } {Y : 𝓥 ̇ } → decidable X → decidable Y → 𝓤₀ ̇
+dec-agree (inl _) (inl _) = 𝟙
+dec-agree (inr _) (inr _) = 𝟙
+dec-agree (inl _) (inr _) = 𝟘
+dec-agree (inr _) (inl _) = 𝟘
+
+𝟚-is-Cont : Cont (discrete-clofun 𝟚-is-discrete) 𝟚-is-c-searchable'
+𝟚-is-Cont (p₁ , d₁) (p₂ , d₂) δ ϕ₁ ϕ₂ ag
+ = transport (λ - → (δ ↑) ≼ discrete-clofun 𝟚-is-discrete (pr₁ (𝟚-is-c-searchable'' p₁ (d₁ ₁)) , -))
+     (e _ _ (f (d₁ ₁) (d₂ ₁)))
+     (transport ((δ ↑) ≼_)
+       ((is-clofun.equal→inf-close (discrete-is-clofun 𝟚-is-discrete)
+         (pr₁ (𝟚-is-c-searchable'' p₁ (d₁ ₁)))) ⁻¹)
+       (∞-maximal (δ ↑)))
+ where
+   f : ∀ a b → dec-agree a b
+   f (inl _) (inl _) = *
+   f (inl a) (inr f) = f (pr₁ ag ₁ a)
+   f (inr f) (inl b) = f (pr₂ ag ₁ b)
+   f (inr _) (inr _) = *
+   e : ∀ a b → dec-agree a b → pr₁ (𝟚-is-c-searchable'' p₁ a) ≡ pr₁ (𝟚-is-c-searchable'' p₂ b)
+   e (inl _) (inl _) decag = refl
+   e (inr _) (inr _) decag = refl
 
 head-predicate : ((T , cs) : sequence-of-clofun-types)
                → ((n : ℕ) → is-clofun (cs n))
@@ -410,34 +458,12 @@ head-predicate (T , cs) ss Ss ccs (p , d) δ ϕ = pₕ , dₕ , succ δ , ϕₕ
      γ (succ n) r = Lemma[a≡₁→b≡₁→min𝟚ab≡₁] (δ≼cxy (succ n) r)
                       (Conty (T ∘ succ , cs ∘ succ) (ss ∘ succ) (Ss ∘ succ) (ccs ∘ succ)
                         (tail-predicate (p , d) x) (tail-predicate (p , d) y)
+                        (tail-predicate-agree (T , cs) ss (p , d) (p , d) ((λ _ → id) , (λ _ → id)) x y δ ϕ ϕ)
                         δ
                         (tail-predicate-reduce-mod (T , cs) ss (p , d) x δ ϕ)
                         (tail-predicate-reduce-mod (T , cs) ss (p , d) y δ ϕ)
                         n r)
-{-
-head-predicate-only : ((T , cs) : sequence-of-clofun-types)
-                    → ((n : ℕ) → is-clofun (cs n))
-                    → (Ss : (n : ℕ) → c-searchable (T n) (cs n))
-                    → ((p , d) : d-predicate (Π T))
-                    → (δ : ℕ) → succ δ is-u-mod-of p on Π-clofun (T , cs)
-                    → d-predicate (T 0)
-head-predicate-only (T , cs) ss Ss (p , d) δ ϕ
- = (pr₁ pₕ) , pr₁ (pr₂ pₕ)
- where
-   pₕ = head-predicate (T , cs) ss Ss (p , d) δ ϕ
 
-head-predicate-reduce-mod : ((T , cs) : sequence-of-clofun-types)
-                          → (ss : (n : ℕ) → is-clofun (cs n))
-                          → (Ss : (n : ℕ) → c-searchable (T n) (cs n))
-                          → ((p , d) : d-predicate (Π T))
-                          → (δ : ℕ) → (ϕ : succ δ is-u-mod-of p on Π-clofun (T , cs))
-                          → (succ δ) is-u-mod-of pr₁ (head-predicate-only (T , cs) ss Ss (p , d) δ ϕ)
-                                              on cs 0
-head-predicate-reduce-mod (T , cs) ss Ss (p , d) δ ϕ
- = pr₂ (pr₂ (pr₂ pₕ))
- where
-   pₕ = head-predicate (T , cs) ss Ss (p , d) δ ϕ
--}
 \end{code}
 
 The difference is that, this time, we have to prove that the head predicate
@@ -480,20 +506,21 @@ Condition (T , cs) ss Ss ccs (p , d) (succ δ) ϕ (α , pα)
     δ (tail-predicate-reduce-mod (T , cs) ss (p , d) (α 0) δ ϕ)
   (tail α , transport p (head-tail-eta α) pα))
 
-Conty (T , cs) ss Ss ccs (p₁ , d₁) (p₂ , d₂) 0        ϕ₁ ϕ₂
+Conty (T , cs) ss Ss ccs (p₁ , d₁) (p₂ , d₂) ag 0        ϕ₁ ϕ₂
  = Zero-minimal (Π-clofun (T , cs)
                      (Searcher (T , cs) ss Ss ccs (p₁ , d₁) 0 ϕ₁
                     , Searcher (T , cs) ss Ss ccs (p₂ , d₂) 0 ϕ₂))
-Conty (T , cs) ss Ss ccs (p₁ , d₁) (p₂ , d₂) (succ δ) ϕ₁ ϕ₂ 0 r
+Conty (T , cs) ss Ss ccs (p₁ , d₁) (p₂ , d₂) ag (succ δ) ϕ₁ ϕ₂ 0 r
  = ccs 0 (pr₁ ph1 , pr₁ (pr₂ ph1)) (pr₁ ph2 , pr₁ (pr₂ ph2))
          (succ δ)
          (pr₂ (pr₂ (pr₂ ph1)))
          (pr₂ (pr₂ (pr₂ ph2)))
+         {!!}
          0 r
  where
    ph1 = head-predicate (T , cs) ss Ss ccs (p₁ , d₁) δ ϕ₁
    ph2 = head-predicate (T , cs) ss Ss ccs (p₂ , d₂) δ ϕ₂
-Conty (T , cs) ss Ss ccs (p₁ , d₁) (p₂ , d₂) (succ δ) ϕ₁ ϕ₂ (succ n) r
+Conty (T , cs) ss Ss ccs (p₁ , d₁) (p₂ , d₂) ag (succ δ) ϕ₁ ϕ₂ (succ n) r
  = Lemma[a≡₁→b≡₁→min𝟚ab≡₁] (γ₁ (succ n) r) (γ₂ n r)
  where
    ph1 = head-predicate (T , cs) ss Ss ccs (p₁ , d₁) δ ϕ₁
@@ -506,9 +533,11 @@ Conty (T , cs) ss Ss ccs (p₁ , d₁) (p₂ , d₂) (succ δ) ϕ₁ ϕ₂ (succ
               (succ δ)
               (pr₂ (pr₂ (pr₂ ph1)))
               (pr₂ (pr₂ (pr₂ ph2)))
+              {!!}
    γ₂ = Conty (T ∘ succ , cs ∘ succ) (ss ∘ succ) (Ss ∘ succ) (ccs ∘ succ)
           (tail-predicate (p₁ , d₁) x)
           (tail-predicate (p₂ , d₂) y)
+          (tail-predicate-agree (T , cs) ss (p₁ , d₁) (p₂ , d₂) ag x y δ ϕ₁ ϕ₂)
           δ
           (tail-predicate-reduce-mod (T , cs) ss (p₁ , d₁) x δ ϕ₁)
           (tail-predicate-reduce-mod (T , cs) ss (p₂ , d₂) y δ ϕ₂)
