@@ -365,6 +365,20 @@ build-up (T , cs) ss xs ys δ δ≼cxsys x (succ n) r
     (ap (λ - → pr₁ - (succ n)) (is-clofun.equal→inf-close (ss 0) x))
     (δ≼cxsys n r)
 
+build-up-hd : ((T , cs) : sequence-of-clofun-types)
+            → ((n : ℕ) → is-clofun (cs n))
+            → (x y : T 0) → (δ : ℕ)
+            → (succ δ ↑) ≼ cs 0 (x , y)
+            → (xs : Π (T ∘ succ))
+            → (succ δ ↑) ≼ Π-clofun (T , cs) (x :: xs , y :: xs)
+build-up-hd (T , cs) ss x y δ δ≼cxy xs 0 refl
+ = δ≼cxy 0 refl
+build-up-hd (T , cs) ss x y δ δ≼cxy xs (succ n) r
+ = Lemma[a≡₁→b≡₁→min𝟚ab≡₁]
+    (δ≼cxy (succ n) r)
+    (ap (λ - → pr₁ - n)
+      (is-clofun.equal→inf-close (Π-is-clofun (T ∘ succ , cs ∘ succ) (ss ∘ succ)) xs))
+
 tail-predicate-reduce-mod : ((T , cs) : sequence-of-clofun-types)
                            → (ss : (n : ℕ) → is-clofun (cs n))
                            → ((p , d) : d-predicate (Π T))
@@ -380,11 +394,19 @@ tail-predicate-agree : ((T , cs) : sequence-of-clofun-types)
                      → ((p₁ , d₁) (p₂ , d₂) : d-predicate (Π T))
                      → they-agree (p₁ , d₁) (p₂ , d₂)
                      → (x y : T 0) → (δ : ℕ)
+                     → (succ δ ↑) ≼ cs 0 (x , y)
                      → (succ δ) is-u-mod-of p₁ on Π-clofun (T , cs)
                      → (succ δ) is-u-mod-of p₂ on Π-clofun (T , cs)
                      → they-agree (tail-predicate (p₁ , d₁) x) (tail-predicate (p₂ , d₂) y)
-tail-predicate-agree (T , cs) ss (p₁ , d₁) (p₂ , d₂) ag x y δ ϕ₁ ϕ₂
- = {!!}
+tail-predicate-agree (T , cs) ss (p₁ , d₁) (p₂ , d₂) ag x y δ δ≼cxy ϕ₁ ϕ₂
+ = (λ xs p₁xxs → pr₁ ag (y :: xs) (ϕ₁ _ (γ xs)  p₁xxs))
+ , (λ xs p₂xxs → pr₂ ag (x :: xs) (ϕ₂ _ (γ' xs) p₂xxs))
+ where
+   γ : (xs : Π (T ∘ succ)) → (succ δ ↑) ≼ Π-clofun (T , cs) (x :: xs , y :: xs)
+   γ xs = build-up-hd (T , cs) ss x y δ δ≼cxy xs
+   γ' : (xs : Π (T ∘ succ)) → (succ δ ↑) ≼ Π-clofun (T , cs) (y :: xs , x :: xs)
+   γ' xs = transport ((succ δ ↑) ≼_)
+             (is-clofun.symmetricity (Π-is-clofun (T , cs) ss) (y :: xs) (x :: xs) ⁻¹) (γ xs)
 
 Conty : ((T , cs) : sequence-of-clofun-types)
       → (ss : (n : ℕ) → is-clofun (cs n))
@@ -458,11 +480,26 @@ head-predicate (T , cs) ss Ss ccs (p , d) δ ϕ = pₕ , dₕ , succ δ , ϕₕ
      γ (succ n) r = Lemma[a≡₁→b≡₁→min𝟚ab≡₁] (δ≼cxy (succ n) r)
                       (Conty (T ∘ succ , cs ∘ succ) (ss ∘ succ) (Ss ∘ succ) (ccs ∘ succ)
                         (tail-predicate (p , d) x) (tail-predicate (p , d) y)
-                        (tail-predicate-agree (T , cs) ss (p , d) (p , d) ((λ _ → id) , (λ _ → id)) x y δ ϕ ϕ)
+                        (tail-predicate-agree (T , cs) ss (p , d) (p , d) ((λ _ → id) , (λ _ → id)) x y δ δ≼cxy ϕ ϕ)
                         δ
                         (tail-predicate-reduce-mod (T , cs) ss (p , d) x δ ϕ)
                         (tail-predicate-reduce-mod (T , cs) ss (p , d) y δ ϕ)
                         n r)
+
+head-predicate-agree : ((T , cs) : sequence-of-clofun-types)
+                     → (ss : (n : ℕ) → is-clofun (cs n))
+                     → (Ss : (n : ℕ) → c-searchable (T n) (cs n))
+                     → (ccs : (n : ℕ) → Cont (cs n) (Ss n))
+                     → ((p₁ , d₁) (p₂ , d₂) : d-predicate (Π T))
+                     → they-agree (p₁ , d₁) (p₂ , d₂)
+                     → (δ : ℕ)
+                     → (ϕ₁ : (succ δ) is-u-mod-of p₁ on Π-clofun (T , cs))
+                     → (ϕ₂ : (succ δ) is-u-mod-of p₂ on Π-clofun (T , cs))
+                     → let ph1 = head-predicate (T , cs) ss Ss ccs (p₁ , d₁) δ ϕ₁ in
+                       let ph2 = head-predicate (T , cs) ss Ss ccs (p₂ , d₂) δ ϕ₂ in
+                       they-agree (pr₁ ph1 , pr₁ (pr₂ ph1)) (pr₁ ph2 , pr₁ (pr₂ ph2))
+head-predicate-agree (T , cs) ss Ss ccs (p₁ , d₁) (p₂ , d₂) ag δ ϕ₁ ϕ₂
+ = (λ x phx → {!!}) , {!!}
 
 \end{code}
 
@@ -537,7 +574,7 @@ Conty (T , cs) ss Ss ccs (p₁ , d₁) (p₂ , d₂) ag (succ δ) ϕ₁ ϕ₂ (s
    γ₂ = Conty (T ∘ succ , cs ∘ succ) (ss ∘ succ) (Ss ∘ succ) (ccs ∘ succ)
           (tail-predicate (p₁ , d₁) x)
           (tail-predicate (p₂ , d₂) y)
-          (tail-predicate-agree (T , cs) ss (p₁ , d₁) (p₂ , d₂) ag x y δ ϕ₁ ϕ₂)
+          (tail-predicate-agree (T , cs) ss (p₁ , d₁) (p₂ , d₂) ag x y δ γ₁ ϕ₁ ϕ₂)
           δ
           (tail-predicate-reduce-mod (T , cs) ss (p₁ , d₁) x δ ϕ₁)
           (tail-predicate-reduce-mod (T , cs) ss (p₂ , d₂) y δ ϕ₂)
