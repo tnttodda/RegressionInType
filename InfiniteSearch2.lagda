@@ -440,8 +440,13 @@ Tail stuff (lemma 2)
 
 \begin{code}
 
-≼cxx : {X : 𝓤 ̇ } → (c : X × X → ℕ∞) → is-clofun c → (δ : ℕ) → (x : X) → (δ ↑) ≼ c (x , x)
-≼cxx c i δ x = transport ((δ ↑) ≼_) (is-clofun.equal→inf-close i x ⁻¹) (∞-maximal (δ ↑))
+≼-clofun-refl : {X : 𝓤 ̇ } → (c : X × X → ℕ∞) → is-clofun c
+              → (δ : ℕ) → (x : X) → (δ ↑) ≼ c (x , x)
+≼-clofun-refl c i δ x = transport ((δ ↑) ≼_) (is-clofun.equal→inf-close i x ⁻¹) (∞-maximal (δ ↑))
+
+≼-clofun-sym : {X : 𝓤 ̇ } → (c : X × X → ℕ∞) → is-clofun c
+             → (δ : ℕ) → (x y : X) → (δ ↑) ≼ c (x , y) → (δ ↑) ≼ c (y , x)
+≼-clofun-sym c i δ x y = transport ((δ ↑) ≼_) (is-clofun.symmetricity i x y)
 
 tail-predicate : {T : ℕ → 𝓤₀ ̇ }
                → ((p , d) : d-predicate (Π T))
@@ -470,8 +475,7 @@ tail-predicate-reduce-mod : ((T , cs) : sequence-of-clofun-types)
                           →       δ  is-u-mod-of (pr₁ (tail-predicate (p , d) x))
                                                  on Π-clofun ((T ∘ succ) , (cs ∘ succ))
 tail-predicate-reduce-mod (T , cs) is p x δ ϕ (xs , ys) δ≼cxsys
- = ϕ (x :: xs , x :: ys)
-     (build-up (T , cs) is x x xs ys δ (≼cxx (cs 0) (is 0) (succ δ) x) δ≼cxsys)
+ = ϕ (x :: xs , x :: ys) (build-up (T , cs) is x x xs ys δ (≼-clofun-refl (cs 0) (is 0) (succ δ) x) δ≼cxsys)
 
 \end{code}
 
@@ -599,28 +603,41 @@ Two predicates are therefore 'close' if they agree on close arguments.
 Two decidable predicates p₁,p₂ : d-predicate X are 'close' up to
 precision δ : ℕ on closeness function c : X × X → ℕ∞ if, for any two
 arguments x,y : X that are δ-close, both p₁(x) ⇒ p₂(y) and p₂(x) ⇒ p₁(y).
-Furthermore, both functions must have δ : ℕ as a modulus of uniform continuity.
 
 \begin{code}
+
+agree-everywhere : {X : 𝓤 ̇ } → d-predicate X → d-predicate X → 𝓤 ̇
+agree-everywhere {𝓤} {X} (p₁ , d₁) (p₂ , d₂) = ((x : X) → p₁ x → p₂ x)
+                                             × ((x : X) → p₂ x → p₁ x)
 
 close : {X : 𝓤 ̇ } → d-predicate X → d-predicate X → ℕ → (X × X → ℕ∞) → 𝓤 ̇
 close {𝓤} {X} (p₁ , d₁) (p₂ , d₂) δ c
  = (((x , y) : X × X) → (δ ↑) ≼ c (x , y) → p₁ x → p₂ y)
  × (((x , y) : X × X) → (δ ↑) ≼ c (x , y) → p₂ x → p₁ y)
- × (δ is-u-mod-of p₁ on c)
- × (δ is-u-mod-of p₂ on c)
 
 \end{code}
 
 Of course, any uniformly continuous decidable predicate is δ-close to itself,
 where δ : ℕ is the modulus of continuity. 
 
+Also, predicates that are close to any degree of precision are trivially
+'the same' in the sense that they agree on identical arguments.
+
 \begin{code}
 
-close-refl : {X : 𝓤 ̇ } → (c : X × X → ℕ∞)
-           → (((p , d) , δ , ϕ) : uc-d-predicate X c)
-           → close (p , d) (p , d) δ c
-close-refl c ((p , d) , δ , ϕ) = ϕ , ϕ , ϕ , ϕ
+close-predicate-itself : {X : 𝓤 ̇ } → (c : X × X → ℕ∞)
+                       → (((p , d) , δ , ϕ) : uc-d-predicate X c)
+                       → close (p , d) (p , d) δ c
+close-predicate-itself c ((p , d) , δ , ϕ) = ϕ , ϕ
+
+close-predicates-agree : {X : 𝓤 ̇ } → (c : X × X → ℕ∞) → (i : is-clofun c)
+                       → ((p₁ , d₁) (p₂ , d₂) : d-predicate X)
+                       → (δ : ℕ)
+                       → close (p₁ , d₁) (p₂ , d₂) δ c
+                       → agree-everywhere (p₁ , d₁) (p₂ , d₂)
+close-predicates-agree c i (p₁ , d₁) (p₂ , d₂) δ (f , g)
+ = (λ x p₁x → f (x , x) (≼-clofun-refl c i δ x) p₁x)
+ , (λ x p₂x → g (x , x) (≼-clofun-refl c i δ x) p₂x)
 
 \end{code}
 
@@ -632,14 +649,16 @@ A searcher is called 'agreeable' if the results of searching two
 agreeable : {X : 𝓤 ̇ } → (c : X × X → ℕ∞) → c-searchable X c → (𝓤₀ ⁺) ⊔ 𝓤 ̇ 
 agreeable {𝓤} {X} c S = ((p₁ , d₁) (p₂ , d₂) : d-predicate X)
                       → (δ : ℕ)
-                      → ((f , g , ϕ₁ , ϕ₂) : close (p₁ , d₁) (p₂ , d₂) δ c)
+                      → close (p₁ , d₁) (p₂ , d₂) δ c
+                      → (ϕ₁ : δ is-u-mod-of p₁ on c)
+                      → (ϕ₂ : δ is-u-mod-of p₂ on c)
                       → (δ ↑) ≼ c (pr₁ (S ((p₁ , d₁) , δ , ϕ₁))
                                  , pr₁ (S ((p₂ , d₂) , δ , ϕ₂)))
 
 \end{code}
 
 The searcher for 𝟚 is agreeable. In order to prove this clearly,
-we formulate the proof that 𝟚 is continuously searchable.
+we reformulate the proof that 𝟚 is continuously searchable.
 
 First, we show that given any predicate on 𝟚 such that p(₁) is
 decidable, we can find an answer x₀ : 𝟚 such that Σ p implies p(x₀).
@@ -649,6 +668,8 @@ If p(₁) doesn't hold, then x₀ ≔ ₀.
    Assuming Σ p gives us some x : 𝟚 such that p(x).
       If x ≡ ₀, then p(x₀) is trivially satisfied.
       If x ≡ ₁, then there is a contradiction.
+
+This gives us the fact that 𝟚 is continuously searchable.
 
 \begin{code}
 
@@ -662,49 +683,64 @@ If p(₁) doesn't hold, then x₀ ≔ ₀.
                           (λ e → transport p e px₀)
                           (λ e → 𝟘-elim (¬p₁ (transport p e px₀)))
 
+𝟚-is-c-searchable : c-searchable 𝟚 (discrete-clofun 𝟚-is-discrete)
+𝟚-is-c-searchable ((p , d) , _) = 𝟚-is-c-searchable' p (d ₁)
+
 \end{code}
 
 We then show that the searcher as defined above, when given
 two predicates that are δ-close for any δ : ℕ,
 always returns the same answer for x₀.
 
-This is because ?
+This is because the two predicates agree everywhere.
 
 \begin{code}
 
-𝟚-is-c-searchable'-eq : ((p₁ , d₁) (p₂ , d₂) : d-predicate 𝟚)
-                      → (δ : ℕ)
-                      → close (p₁ , d₁) (p₂ , d₂) δ (discrete-clofun 𝟚-is-discrete)
-                      → pr₁ (𝟚-is-c-searchable' p₁ (d₁ ₁)) ≡ pr₁ (𝟚-is-c-searchable' p₂ (d₂ ₁))
-𝟚-is-c-searchable'-eq (p₁ , d₁) (p₂ , d₂) δ (f , g , _ , _) = γ (d₁ ₁) {!!}
+𝟚-is-c-searchable'-agree-eq : ((p₁ , d₁) (p₂ , d₂) : d-predicate 𝟚)
+                            → agree-everywhere (p₁ , d₁) (p₂ , d₂)
+                            → pr₁ (𝟚-is-c-searchable' p₁ (d₁ ₁))
+                            ≡ pr₁ (𝟚-is-c-searchable' p₂ (d₂ ₁))
+𝟚-is-c-searchable'-agree-eq (p₁ , d₁) (p₂ , d₂) (f , g) = γ (d₁ ₁) (d₂ ₁)
  where
    γ : (d₁₁ : decidable (p₁ ₁)) (d₂₁ : decidable (p₂ ₁))
      → pr₁ (𝟚-is-c-searchable' p₁ d₁₁) ≡ pr₁ (𝟚-is-c-searchable' p₂ d₂₁)
-   γ (inl _) (inl _) = refl
-   γ (inr _) (inr _) = refl
-   γ (inl a) (inr b) = 𝟘-elim (b (f (₁ , ₁) (λ _ _ → refl) a))
-   γ (inr a) (inl b) = 𝟘-elim (a (g (₁ , ₁) (λ _ _ → refl) b))
+   γ (inl  _ ) (inl  _ ) = refl
+   γ (inr  _ ) (inr  _ ) = refl
+   γ (inl  p₁) (inr ¬p₁) = 𝟘-elim (¬p₁ (f ₁ p₁))
+   γ (inr ¬p₁) (inl  p₁) = 𝟘-elim (¬p₁ (g ₁ p₁))
 
+𝟚-is-c-searchable'-close-eq : ((p₁ , d₁) (p₂ , d₂) : d-predicate 𝟚)
+                            → (δ : ℕ)
+                            → close (p₁ , d₁) (p₂ , d₂) δ (discrete-clofun 𝟚-is-discrete)
+                            → pr₁ (𝟚-is-c-searchable' p₁ (d₁ ₁))
+                            ≡ pr₁ (𝟚-is-c-searchable' p₂ (d₂ ₁))
+𝟚-is-c-searchable'-close-eq (p₁ , d₁) (p₂ , d₂) δ (f , g)
+ = 𝟚-is-c-searchable'-agree-eq (p₁ , d₁) (p₂ , d₂)
+     (close-predicates-agree (discrete-clofun 𝟚-is-discrete) (discrete-is-clofun 𝟚-is-discrete)
+       (p₁ , d₁) (p₂ , d₂) δ (f , g))
 
 \end{code}
 
-From this, we get that 𝟚 is searchable.
+From this, we get that 𝟚's searcher is agreeable.
 
 \begin{code}
 
-𝟚-is-c-searchable : c-searchable 𝟚 (discrete-clofun 𝟚-is-discrete)
-𝟚-is-c-searchable ((p , d) , _) = 𝟚-is-c-searchable' p (d ₁)
-
 𝟚-is-agreeable : agreeable (discrete-clofun 𝟚-is-discrete) 𝟚-is-c-searchable
-𝟚-is-agreeable (p₁ , d₁) (p₂ , d₂) δ (f , g , ϕ₁ , ϕ₂)
+𝟚-is-agreeable (p₁ , d₁) (p₂ , d₂) δ (f , g) ϕ₁ ϕ₂
  = transport (λ - → (δ ↑) ≼ discrete-clofun 𝟚-is-discrete
                (pr₁ (𝟚-is-c-searchable' p₁ (d₁ ₁)) , -))
-             {!!}
-             (≼cxx (discrete-clofun 𝟚-is-discrete)
-               (discrete-is-clofun 𝟚-is-discrete)
-               δ (pr₁ (𝟚-is-c-searchable' p₁ (d₁ ₁))))
+     (𝟚-is-c-searchable'-close-eq (p₁ , d₁) (p₂ , d₂) δ (f , g))
+     (≼-clofun-refl (discrete-clofun 𝟚-is-discrete)
+       (discrete-is-clofun 𝟚-is-discrete)
+       δ (pr₁ (𝟚-is-c-searchable' p₁ (d₁ ₁))))
 
 \end{code}
+
+**Tychonoff Attempt 2**
+
+We now restate our Tychonoff theorem, with the assumption
+that each of the continuously searchable types that make up
+T yields an agreeable searcher.
 
 \begin{code}
 
@@ -742,21 +778,16 @@ tail-predicate-agree : ((T , cs) : sequence-of-clofun-types)
                      → (δ : ℕ)
                      → (x y : T 0)
                      → (succ δ ↑) ≼ cs 0 (x , y)
-                     → ((_ , ϕ₁ , ϕ₂) : close (p₁ , d₁) (p₂ , d₂) (succ δ) (Π-clofun (T , cs)))
+                     → close (p₁ , d₁) (p₂ , d₂) (succ δ) (Π-clofun (T , cs))
+                     → (ϕ₁ : succ δ is-u-mod-of p₁ on (Π-clofun (T , cs)))
+                     → (ϕ₂ : succ δ is-u-mod-of p₂ on (Π-clofun (T , cs)))
                      → close (tail-predicate (p₁ , d₁) x) (tail-predicate (p₂ , d₂) y)
                              δ (Π-clofun (T ∘ succ , cs ∘ succ))
-tail-predicate-agree (T , cs) is (p₁ , d₁) (p₂ , d₂) δ x y δ≼cxy (f , g , ϕ₁ , ϕ₂) 
- = (λ (xs , ys) δ≼cxsys
-   → f (x :: xs , y :: ys)
-       (build-up (T , cs) is x y xs ys δ δ≼cxy δ≼cxsys))
- , (λ (xs , ys) δ≼cxsys
-   → g (y :: xs , x :: ys)
-       (build-up (T , cs) is y x xs ys δ δ≼cyx δ≼cxsys))
- , tail-predicate-reduce-mod (T , cs) is (p₁ , d₁) x δ ϕ₁
- , tail-predicate-reduce-mod (T , cs) is (p₂ , d₂) y δ ϕ₂
+tail-predicate-agree (T , cs) is (p₁ , d₁) (p₂ , d₂) δ x y δ≼cxy (f , g) ϕ₁ ϕ₂
+ = (λ (xs , ys) δ≼cxsys → f (x :: xs , y :: ys) (build-up (T , cs) is x y xs ys δ δ≼cxy δ≼cxsys))
+ , (λ (xs , ys) δ≼cxsys → g (y :: xs , x :: ys) (build-up (T , cs) is y x xs ys δ δ≼cyx δ≼cxsys))
  where
-   δ≼cyx : (succ δ ↑) ≼ cs 0 (y , x)
-   δ≼cyx = transport ((succ δ ↑) ≼_) (is-clofun.symmetricity (is 0) x y) δ≼cxy
+   δ≼cyx = ≼-clofun-sym (cs 0) (is 0) (succ δ) x y δ≼cxy
    
 agreeabley2 : ((T , cs) : sequence-of-clofun-types)
       → (is : (n : ℕ) → is-clofun (cs n))
@@ -764,7 +795,9 @@ agreeabley2 : ((T , cs) : sequence-of-clofun-types)
       → (ccs : (n : ℕ) → agreeable (cs n) (Is n))
       → ((p₁ , d₁) (p₂ , d₂) : d-predicate (Π T))
       → (δ : ℕ)
-      → ((f , g , ϕ₁ , ϕ₂) : close (p₁ , d₁) (p₂ , d₂) δ (Π-clofun (T , cs)))
+      → close (p₁ , d₁) (p₂ , d₂) δ (Π-clofun (T , cs))
+      → (ϕ₁ : δ is-u-mod-of p₁ on (Π-clofun (T , cs)))
+      → (ϕ₂ : δ is-u-mod-of p₂ on (Π-clofun (T , cs)))
       → (δ ↑) ≼ Π-clofun (T , cs)
                   (Searcher (T , cs) is Is ccs (p₁ , d₁) δ ϕ₁
                  , Searcher (T , cs) is Is ccs (p₂ , d₂) δ ϕ₂)
@@ -800,19 +833,9 @@ head-predicate (T , cs) is Is ccs (p , d) δ ϕ
             (tail-predicate (p , d) x)
             (tail-predicate (p , d) y)
             δ
-            (tail-predicate-agree (T , cs) is (p , d) (p , d)
-              δ x y δ≼cxy (close-refl (Π-clofun (T , cs)) ((p , d) , succ δ , ϕ)))))
-
-{- ϕ (x :: 𝓔xs x , y :: 𝓔xs y) γ pₕxs where
-     γ : (succ δ ↑) ≼ Π-clofun (T , cs) ((x :: 𝓔xs x) , (y :: 𝓔xs y))
-     γ = build-up (T , cs) is x y (𝓔xs x) (𝓔xs y) δ δ≼cxy
-           (agreeabley (T ∘ succ , cs ∘ succ) (is ∘ succ) (Is ∘ succ) (ccs ∘ succ)
-             (tail-predicate (p , d) x) (tail-predicate (p , d) y)
-             (tail-predicate-agree (T , cs) is (p , d) (p , d)
-               ((λ _ → id) , (λ _ → id)) x y δ δ≼cxy ϕ ϕ)
-             δ
-             (tail-predicate-reduce-mod (T , cs) is (p , d) x δ ϕ)
-             (tail-predicate-reduce-mod (T , cs) is (p , d) y δ ϕ)) -}
+            (tail-predicate-agree (T , cs) is (p , d) (p , d) δ x y δ≼cxy (close-predicate-itself (Π-clofun (T , cs)) ((p , d) , succ δ , ϕ)) ϕ ϕ)
+            (tail-predicate-reduce-mod (T , cs) is (p , d) x δ ϕ)
+            (tail-predicate-reduce-mod (T , cs) is (p , d) y δ ϕ)))
 
 head-predicate-agree : ((T , cs) : sequence-of-clofun-types)
                      → (is : (n : ℕ) → is-clofun (cs n))
@@ -820,17 +843,15 @@ head-predicate-agree : ((T , cs) : sequence-of-clofun-types)
                      → (ccs : (n : ℕ) → agreeable (cs n) (Is n))
                      → ((p₁ , d₁) (p₂ , d₂) : d-predicate (Π T))
                      → (δ : ℕ)
-                     → ((f , g , ϕ₁ , ϕ₂) : close (p₁ , d₁) (p₂ , d₂) (succ δ) (Π-clofun (T , cs)))
+                     → close (p₁ , d₁) (p₂ , d₂) (succ δ) (Π-clofun (T , cs))
+                     → (ϕ₁ : succ δ is-u-mod-of p₁ on (Π-clofun (T , cs)))
+                     → (ϕ₂ : succ δ is-u-mod-of p₂ on (Π-clofun (T , cs)))
                      → let ph1 = head-predicate (T , cs) is Is ccs (p₁ , d₁) δ ϕ₁ in
                        let ph2 = head-predicate (T , cs) is Is ccs (p₂ , d₂) δ ϕ₂ in
                        close (pr₁ ph1) (pr₁ ph2) (succ δ) (cs 0)
-head-predicate-agree (T , cs) is Is ccs (p₁ , d₁) (p₂ , d₂) δ (f , g , ϕ₁ , ϕ₂)
- = (λ (x , y) δ≼cxy
-    → f (x :: 𝓔xs₁ x , y :: 𝓔xs₂ y) (γ  x y δ≼cxy))
- , (λ (x , y) δ≼cxy
-    → g (x :: 𝓔xs₂ x , y :: 𝓔xs₁ y) (γ' x y δ≼cxy))
- , pr₂ (pr₂ ph1)
- , pr₂ (pr₂ ph2)
+head-predicate-agree (T , cs) is Is ccs (p₁ , d₁) (p₂ , d₂) δ (f , g) ϕ₁ ϕ₂
+ = (λ (x , y) δ≼cxy → f (x :: 𝓔xs₁ x , y :: 𝓔xs₂ y) (γ  x y δ≼cxy))
+ , (λ (x , y) δ≼cxy → g (x :: 𝓔xs₂ x , y :: 𝓔xs₁ y) (γ' x y δ≼cxy))
  where
    𝓔xs₁ 𝓔xs₂ : T 0 → Π (T ∘ succ)
    𝓔xs₁ x = Searcher (T ∘ succ , cs ∘ succ) (is ∘ succ) (Is ∘ succ) (ccs ∘ succ)
@@ -849,13 +870,15 @@ head-predicate-agree (T , cs) is Is ccs (p₁ , d₁) (p₂ , d₂) δ (f , g , 
                      (tail-predicate (p₁ , d₁) x)
                      (tail-predicate (p₂ , d₂) y)
                      δ
-                     (tail-predicate-agree (T , cs) is (p₁ , d₁) (p₂ , d₂) δ x y δ≼cxy (f , g , ϕ₁ , ϕ₂)))
+                     (tail-predicate-agree (T , cs) is (p₁ , d₁) (p₂ , d₂) δ x y δ≼cxy (f , g) ϕ₁ ϕ₂)
+                     (tail-predicate-reduce-mod (T , cs) is (p₁ , d₁) x δ ϕ₁)
+                     (tail-predicate-reduce-mod (T , cs) is (p₂ , d₂) y δ ϕ₂))
    γ' : (x y : T 0)
       → (succ δ ↑) ≼ cs 0 (x , y)
       → (succ δ ↑) ≼ Π-clofun (T , cs) (x :: 𝓔xs₂ x , y :: 𝓔xs₁ y)
-   γ' x y δ≼cxy = transport ((succ δ ↑) ≼_)
-                    (is-clofun.symmetricity (Π-is-clofun (T , cs) is) (y :: 𝓔xs₁ y) (x :: 𝓔xs₂ x))
-                    (γ y x (transport ((succ δ ↑) ≼_) (is-clofun.symmetricity (is 0) x y) δ≼cxy)) 
+   γ' x y δ≼cxy = ≼-clofun-sym (Π-clofun (T , cs)) (Π-is-clofun (T , cs) is)
+                    (succ δ) (y :: 𝓔xs₁ y) (x :: 𝓔xs₂ x)
+                    (γ y x (≼-clofun-sym (cs 0) (is 0) (succ δ) x y δ≼cxy))
 
 \end{code}
 
@@ -906,17 +929,19 @@ Condition (T , cs) is Is ccs (p , d) (succ δ) ϕ (α , pα)
 
 \begin{code}
 
-agreeabley2 (T , cs) is Is ccs (p₁ , d₁) (p₂ , d₂) 0        (f , ϕ₁ , ϕ₂)
+agreeabley2 (T , cs) is Is ccs (p₁ , d₁) (p₂ , d₂) 0        (f , g) ϕ₁ ϕ₂
  = 0-minimal _
 
-agreeabley2 (T , cs) is Is ccs (p₁ , d₁) (p₂ , d₂) (succ δ) (f , g , ϕ₁ , ϕ₂) 0        r
+agreeabley2 (T , cs) is Is ccs (p₁ , d₁) (p₂ , d₂) (succ δ) (f , g) ϕ₁ ϕ₂ 0        r
  = ccs 0 (pr₁ ph1) (pr₁ ph2) (succ δ)
-     (head-predicate-agree (T , cs) is Is ccs (p₁ , d₁) (p₂ , d₂) δ (f , g , ϕ₁ , ϕ₂))
+     (head-predicate-agree (T , cs) is Is ccs (p₁ , d₁) (p₂ , d₂) δ (f , g) ϕ₁ ϕ₂)
+     (pr₂ (pr₂ ph1))
+     (pr₂ (pr₂ ph2))
      0 r
  where
    ph1 = head-predicate (T , cs) is Is ccs (p₁ , d₁) δ ϕ₁
    ph2 = head-predicate (T , cs) is Is ccs (p₂ , d₂) δ ϕ₂
-agreeabley2 (T , cs) is Is ccs (p₁ , d₁) (p₂ , d₂) (succ δ) (f , g , ϕ₁ , ϕ₂) (succ n) r
+agreeabley2 (T , cs) is Is ccs (p₁ , d₁) (p₂ , d₂) (succ δ) (f , g) ϕ₁ ϕ₂ (succ n) r
  = Lemma[a≡₁→b≡₁→min𝟚ab≡₁] (γ₁ (succ n) r) (γ₂ n r)
  where
    ph1 = head-predicate (T , cs) is Is ccs (p₁ , d₁) δ ϕ₁
@@ -924,15 +949,17 @@ agreeabley2 (T , cs) is Is ccs (p₁ , d₁) (p₂ , d₂) (succ δ) (f , g , ϕ
    x y : T 0
    x  = pr₁ (Is 0 ph1)
    y  = pr₁ (Is 0 ph2)
-   γ₁ = ccs 0 (pr₁ ph1) (pr₁ ph2) (succ δ) (head-predicate-agree (T , cs) is Is ccs (p₁ , d₁) (p₂ , d₂) δ (f , g , ϕ₁ , ϕ₂))
+   γ₁ = ccs 0 (pr₁ ph1) (pr₁ ph2) (succ δ)
+          (head-predicate-agree (T , cs) is Is ccs (p₁ , d₁) (p₂ , d₂) δ (f , g) ϕ₁ ϕ₂)
+          (pr₂ (pr₂ ph1))
+          (pr₂ (pr₂ ph2))
    γ₂ = agreeabley2 (T ∘ succ , cs ∘ succ) (is ∘ succ) (Is ∘ succ) (ccs ∘ succ)
           (tail-predicate (p₁ , d₁) x)
           (tail-predicate (p₂ , d₂) y)
           δ
-          (tail-predicate-agree (T , cs) is (p₁ , d₁) (p₂ , d₂)
-            δ x y
-            γ₁
-            (f , g , ϕ₁ , ϕ₂))
+          (tail-predicate-agree (T , cs) is (p₁ , d₁) (p₂ , d₂) δ x y γ₁ (f , g) ϕ₁ ϕ₂)
+          (tail-predicate-reduce-mod (T , cs) is (p₁ , d₁) x δ ϕ₁)
+          (tail-predicate-reduce-mod (T , cs) is (p₂ , d₂) y δ ϕ₂)
 
 \end{code}
 
