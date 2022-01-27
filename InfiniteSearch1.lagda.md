@@ -610,7 +610,6 @@ c (α , β) : ℕ∞ and the equality of a prefix of α and β.
 (Exercises for the reader:)
 
 ```agda
-
 closeness→equality : {X : 𝓤 ̇ } → (ds : is-discrete X)
                    → (α β : ℕ → X) → (n : ℕ)
                    → (succ n ↑) ≼ discrete-seq-clofun ds (α , β)
@@ -698,10 +697,10 @@ to search any uniformly continuous decidable predicate on X.
 
 ```agda
 uc-d-predicate : (X : 𝓤 ̇ ) → (X × X → ℕ∞) → (𝓤₀ ⁺) ⊔ 𝓤 ̇
-uc-d-predicate X c = Σ p ꞉ predicate X , everywhere-decidable p × u-continuous c p
+uc-d-predicate X c = Σ (p , d) ꞉ d-predicate X , u-continuous c p
 
 c-searchable : (X : 𝓤 ̇ ) → (X × X → ℕ∞) → (𝓤₀ ⁺) ⊔ 𝓤 ̇
-c-searchable X c = Π (p  , _) ꞉ uc-d-predicate X c , Σ x₀ ꞉ X , (Σ p → p x₀)
+c-searchable X c = Π ((p , _)  , _) ꞉ uc-d-predicate X c , Σ x₀ ꞉ X , (Σ p → p x₀)
 ```
 
 Of course, any searchable type is trivially continuously searchable on any
@@ -714,10 +713,10 @@ c-searchable-types-are-inhabited : {X : 𝓤 ̇ } → (c : X × X → ℕ∞) �
 c-searchable-types-are-inhabited {𝓤} {X} c S = pr₁ (S trivial-predicate)
  where
    trivial-predicate : uc-d-predicate X c
-   trivial-predicate = (λ x → 𝟙) , (λ x → inl *) , (0 , λ x y _ → *)
+   trivial-predicate = ((λ x → 𝟙) , (λ x → inl *)) , (0 , λ x y _ → *)
 
 searchable→c-searchable : {X : 𝓤 ̇ } → (c : X × X → ℕ∞) → searchable X → c-searchable X c
-searchable→c-searchable c S (p , d , ϕ) = S (p , d)
+searchable→c-searchable c S ((p , d) , δ , ϕ) = S (p , d)
 
 
 𝟚-is-discrete : is-discrete 𝟚
@@ -739,7 +738,7 @@ types are uniformly continuous by this closenss function.
 all-discrete-predicates-are-continuous : {X : 𝓤 ̇ } → (ds : is-discrete X) → d-predicate X
                                        → uc-d-predicate X (discrete-clofun ds)
 all-discrete-predicates-are-continuous {𝓤} {X} ds (p , d)
- = p , d , (1 , λ (x , y) → γ x y (ds x y))
+ = (p , d) , (1 , λ (x , y) → γ x y (ds x y))
  where
    γ : (x y : X) → (q : decidable (x ≡ y)) → (1 ↑) ≼ discrete-c' (x , y) q → p x → p y
    γ x .x (inl refl) 1≼∞ px = px
@@ -773,7 +772,7 @@ we prove the equivalent statement.
                → (δ : ℕ) → δ is-u-mod-of p on (discrete-seq-clofun ds)
                → Σ x₀ ꞉ (ℕ → X) , (Σ p → p x₀)
                
-→c-searchable ds S (p , d , δ , ϕ)
+→c-searchable ds S ((p , d) , δ , ϕ)
  = →c-searchable' ds (c-searchable-discrete→searchable ds S) (p , d) δ ϕ
 ```
 
@@ -793,7 +792,7 @@ any closeness function c : X × X → ℕ∞, with modulus of uniform continuity
 0-mod-always-satisfied c (p , d) ϕ (x₀ , px₀) x = ϕ (x₀ , x) (λ _ ()) px₀
 
 trivial-predicate : {X : 𝓤 ̇ } → (c : X × X → ℕ∞) → uc-d-predicate X c
-trivial-predicate c = (λ _ → 𝟙) , (λ _ → inl *) , (0 , λ x y 0≼cxy → *)
+trivial-predicate c = ((λ _ → 𝟙) , (λ _ → inl *)) , (0 , λ x y 0≼cxy → *)
 ```
 
 Lemma 2.
