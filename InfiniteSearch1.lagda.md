@@ -288,13 +288,13 @@ if it satisfies the following four properties:
       ∀ x y z → min (c (x , y)) (c (y , z)) ≼ c (x , z)
 
 From these properties, we can see clearly the relationship with a metric.
-In fact, an ultrametric (a metric with a generalised triangle equality
+In fact, an ultrametric (a metric with a strengthened triangle equality
 property) can be defined using a closeness function easily:
 
-  m : X × X → ℝ
-  m (x , y) ≡ 1 / c(x , y)
+    m : X × X → ℝ
+    m (x , y) ≡ 1 / (c(x , y) + 1)
 
-Where, by convention, 1 / 0 ≡ ∞ and 1 / ∞ ≡ 0.
+Where, by convention, 1 / ∞ ≡ 0.
 
 ```agda
 record is-clofun {X : 𝓤 ̇ } (c : X × X → ℕ∞) : 𝓤 ̇ where
