@@ -1,12 +1,17 @@
 # Search over uniformly continuous decidable predicates on infinite collections of types
 
-Todd Waugh Ambridge, 22 December 2021 and 1 February 2022
+Todd Waugh Ambridge, 15th December 2021 and 1st February 2022
 
 I explore, in the following two blog posts, two key concepts:
 searchable types and closeness functions.
 
  - [Please click here to read Part I.](InfiniteSearch1.html)
  - [Please click here to read Part II.](InfiniteSearch2.html)
+
+The blog posts are written in literate Agda, meaning that
+everything is both explained in text and fully-foramlised
+in Agda. I use Martín Escardó's Agda library [TypeTopology](https://www.cs.bham.ac.uk/~mhe/agda-new/)
+as a framework.
 
 ## Introduction
 
@@ -103,3 +108,9 @@ products.
        Global optimisation with constructive reals.
        Proceedings - Symposium on Logic in Computer Science (LICS 2021).
      
+## Acknowledgements
+
+Thank you to [Martín Escardó](https://www.cs.bham.ac.uk/~mhe/) for all the support,
+[Tom de Jong](https://www.cs.bham.ac.uk/~txd880/) for feedback,
+and [George Kaye](https://www.georgejkaye.com/) for help with
+formatting the posts.

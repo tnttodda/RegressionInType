@@ -1,6 +1,6 @@
-# Search over uniformly continuous decidable predicates on infinite collections of types. (Part 2)
+# Search over uniformly continuous decidable predicates on infinite collections of types. (Part II)
 
-Todd Waugh Ambridge, 28th January 2022
+Todd Waugh Ambridge, 1st February 2022
 
 ## Table of Contents:
  1. [Overview](#overview)
@@ -15,23 +15,23 @@ Todd Waugh Ambridge, 28th January 2022
 In my [previous blog post](InfiniteSearch1.html), I layed the groundwork necessary to
 safely formalise the Tychonoff theorem in constructive type theory.
 
-I re-introduced the notion of searchable types ─ types X that exhibit a selection
-function that, given any predicate, return an element of X satisfying the predicate
+I re-introduced the notion of searchable types ─ types `X` that exhibit a selection
+function that, given any predicate, return an element of `X` satisfying the predicate
 if at least one such element exists. I also introduced the notion of closeness
 functions; our version of metrics that allow us to define uniformly continuous
 decidable predicates. A type is continuously searchable if we can exhibit a selection
 function that works on all uniformly continuous predicates.
 
 I then proved that sequence types of discrete, continuously searchable types
--- for example, the Cantor type ℕ → 𝟚 -- are continuously searchable. 
+— for example, the Cantor type `ℕ → 𝟚` — are continuously searchable. 
 We now turn our attention to generalising this proof, by removing
 the requirement of discreteness, in order to formalise the Tychonoff
 theorem for continuously searchable types. This will allow us to prove,
-for example, that the type of Cantor sequences ℕ → (ℕ → 𝟚) is
+for example, that the type of Cantor sequences `ℕ → (ℕ → 𝟚)` is
 continuously searchable.
 
 Another version of the Tychonoff theorem for searchable types
-has been [previously formalised](https://www.cs.bham.ac.uk/~mhe/agda/CountableTychonoff.html)
+has been [previously formalised](CountableTychonoff.html)
 by Martín Escardó with Agda’s termination checker turned off;
 the addition of closeness functions allows the proof to terminate, but adds extra
 steps to it as we must prove that everything is continuous.
@@ -40,9 +40,8 @@ steps to it as we must prove that everything is continuous.
 {-# OPTIONS --without-K --exact-split #-}
 
 open import SpartanMLTT hiding (decidable)
+open import Two-Properties hiding (zero-is-not-one)
 open import NaturalsOrder
-open import Two-Properties hiding (_≥₂_;zero-is-not-one)
-open import GenericConvergentSequence hiding (ℕ∞;∞;_≼_;∞-maximal)
 
 module InfiniteSearch2 (fe : {𝓤 𝓥 : Universe} → {X : 𝓤 ̇ } {Y : X → 𝓥 ̇ } {f g : Π Y}
                            → f ∼ g → f ≡ g) where
@@ -54,19 +53,19 @@ open import InfiniteSearch1 fe
          ; tail-predicate ; tail-predicate-reduce-mod
          ; head-predicate)
 ```
-## A closeness function for Π-types <a name="closeness"></a>
+## A closeness function for `Π`-types <a name="closeness"></a>
 
 In topology, the Tychonoff theorem states that arbitrary products of compact spaces
 are themselves compact. As searchable types coincide with the concept of compactness,
-and infinite products are constructed using the Π-type, we restate the Tychonoff theorem
+and infinite products are constructed using the `Π`-type, we restate the Tychonoff theorem
 using our two key notions of continuous searchability and closeness functions:
 
-***Theorem (Tychonoff).*** Given a family of types indexed by the natural numbers T : ℕ → 𝓤,
-such that every (T n) : 𝓤 is continuously searchable and is equipped with a closeness
-function of type T n × T n → ℕ∞, the type Π T : 𝓤 ̇ is continuously searchable.
+***Theorem (Tychonoff).*** Given a family of types indexed by the natural numbers `T : ℕ → 𝓤`,
+such that every `(T n) : 𝓤` is continuously searchable and is equipped with a closeness
+function of type `T n × T n → ℕ∞`, the type `Π T : 𝓤` is continuously searchable.
 
-Of course, in order to prove Π T can be continuously searchable, we must first
-provide a closeness function for Π-types.
+Of course, in order to prove `Π T` can be continuously searchable, we must first
+provide a closeness function for `Π`-types.
 
 An infinite sequence of types, each with a closeness function, is defined
 as follows.
@@ -97,26 +96,26 @@ head-tail-eta α = fe γ where
   γ (succ n) = refl
 ```
 
-We want to determine the closeness c (α , β) : ℕ∞ of two infinite sequences α,β : Π T.
+We want to determine the closeness `c (α , β) : ℕ∞` of two infinite sequences `α,β : Π T`.
 
-It is straightforward to define this where each type (T n) : 𝓤 is discrete
-(i.e. each closeness function cₙ : T n × T n → ℕ∞ is the discrete closeness function).
+It is straightforward to define this where each type `(T n) : 𝓤` is discrete
+(i.e. each closeness function `cₙ : T n × T n → ℕ∞` is the discrete closeness function).
 
     c (α , β) n ≡ ₁,    if x ≡⟦ n ⟧ y,
                   ₀,    otherwise.
 
 This is the "discrete-sequence" closeness function defined in the previous blog post.
 
-But how can we determine c(α , β) : ℕ∞ when nothing is assumed about each cₙ, apart
+But how can we determine `c(α , β) : ℕ∞` when nothing is assumed about each `cₙ`, apart
 from that they satisfy the four properties of closeness functions?
 
-First, note that we can compute cₙ(α n , β n) : ℕ∞ for every n : ℕ.
+First, note that we can compute `cₙ(α n , β n) : ℕ∞` for every `n : ℕ`.
 The following illustrates some potential values of a prefix of these
 closeness functions.
 
-For example, the asterisk * : 𝟚 is defined * ≔ c₂ (α  2 , β 2) 3.
-Of course, * ≡ ₀, because the previous value in the sequence is ₀, and
-every ℕ∞ is decreasing.
+For example, the asterisk `* : 𝟚` is defined `* ≔ c₂ (α  2 , β 2) 3`.
+Of course, `* ≡ ₀`, because the previous value in the sequence is `₀`, and
+every `ℕ∞` is decreasing.
 
         0  1  2  3  4  5  ⋯
     c₀  ₁  ₁  ₁  ₁  ₁  ₀  ⋯
@@ -127,15 +126,15 @@ every ℕ∞ is decreasing.
 
 This 'square' of binary values is infinite in both directions; and we in
 fact use the minimum values of this square's diagonals to determine the
-value c (α , β) : ℕ∞.
+value `c (α , β) : ℕ∞`.
 
-Using this illustration, c (α , β) 0 ≡ ₁ as it is the single element of
-the first diagonal. c (α , β) 1 and c (α , β) 2 are also ₁ because the
-second and third diagonals only feature ₁s. However, c (α , β) 3 is
-₀, because the fourth diagonal features a ₀ ─ we take the minimum value
-of each diagonal. We know that c (α , β) n ≡ ₀ for all n > 3, because
-c₃ (α 3 , β 3) will appear in every following diagonal, always contributing
-a ₀. This means that our determined closeness value is decreasing.
+Using this illustration, `c (α , β) 0 ≡ ₁` as it is the single element of
+the first diagonal. `c (α , β) 1` and `c (α , β) 2` are also `₁` because the
+second and third diagonals only feature `₁`s. However, `c (α , β) 3` is
+`₀`, because the fourth diagonal features a `₀` ─ we take the minimum value
+of each diagonal. We know that `c (α , β) n ≡ ₀` for all `n > 3`, because
+`c₃ (α 3 , β 3)` will appear in every following diagonal, always contributing
+a `₀`. This means that our determined closeness value is decreasing.
 
 Therefore, we can express the closeness value as follows.
 
@@ -181,20 +180,20 @@ We prove this is decreasing by induction.
 
         Lemma[min𝟚ab≡₁→a≡₁] : (a b : 𝟚) → min𝟚 a b ≡ ₁ → a ≡ ₁,
 
-    where a ≔ c₀ (α 0 , β 0) 1,
-      and b ≔ c  (tail α , tail β) 0.
+    where `a ≔ c₀ (α 0 , β 0) 1`,
+      and `b ≔ c  (tail α , tail β) 0`.
            
-    By applying this lemma to r : min𝟚 a b ≡ ₁, we
-    construct s : c₀ (α 0 , β 0) 1 ≡ ₁.
+    By applying this lemma to `r : min𝟚 a b ≡ ₁`, we
+    construct `s : c₀ (α 0 , β 0) 1 ≡ ₁`.
 
-    We apply f to s to complete the proof.
+    We apply `f` to `s` to complete the proof.
 
 (2) In the inductive case we wish to show that,
 
         min𝟚 (c₀ (α 0 , β 0) (succ (succ n)) (c (tail α , tail β) (succ n)) ≡ ₁
         ⇒ min𝟚 (c₀ (α 0 , β 0) (succ n)) (c  (tail α , tail β) n)  ≡ ₁.
 
-    From the fact c₀ is decreasing, we construct,
+    From the fact `c₀` is decreasing, we construct,
 
         f : c₀ (α 0 , β 0) (succ (succ n)) ≡ ₁ ⇒ c₀ (α 0 , β 0) (succ n) ≡ ₁.
 
@@ -211,27 +210,27 @@ We prove this is decreasing by induction.
         Lemma[min𝟚ab≡₁→a≡₁] : (a b : 𝟚) → min𝟚 a b ≡ ₁ → a ≡ ₁,
         Lemma[min𝟚ab≡₁→b≡₁] : (a b : 𝟚) → min𝟚 a b ≡ ₁ → b ≡ ₁.
 
-    By applying these to r, we construct,
-        s : c₀ (α 0 , β 0) (succ (succ n)) ≡ ₁
-    and t : c (tail α , tail β) (succ n)   ≡ ₁.
+    By applying these to `r`, we construct,
+        `s : c₀ (α 0 , β 0) (succ (succ n)) ≡ ₁`
+    and `t : c (tail α , tail β) (succ n)   ≡ ₁`.
 
-    We apply f to s and g to t to construct,
-        u : c₀ (α 0 , β 0) (succ n) ≡ ₁
-    and v : c (tail α , tail β) n   ≡ ₁.
+    We apply `f` to `s` and `g` to `t` to construct,
+        `u : c₀ (α 0 , β 0) (succ n) ≡ ₁`
+    and `v : c (tail α , tail β) n   ≡ ₁`.
 
     We use the following lemma,
 
         Lemma[a≡₁→b≡₁→min𝟚ab≡₁] : (a b : 𝟚) → a ≡ ₁ → b ≡ ₁ → min𝟚 a b ≡ ₁.
 
-    where a ≔ c₀ (α 0 , β 0) (succ n),
-      and b ≔ c (tail α , tail β) n.
+    where `a ≔ c₀ (α 0 , β 0) (succ n)`,
+      and `b ≔ c (tail α , tail β) n`.
 
-    By applying this lemma to u and v, we complete the proof.  
+    By applying this lemma to `u` and `v`, we complete the proof.  
 
 ```agda
 Π-clofun'-dec : ((T , cs) : sequence-of-clofun-types 𝓤)
               → ((A , B) : Π T × Π T)
-              → decreasing (Π-clofun' (T , cs) (A , B))
+              → decreasing-binary-seq (Π-clofun' (T , cs) (A , B))
 Π-clofun'-dec (T , cs) (A , B) 0        r =
  pr₂ (cs 0 (A 0 , B 0)) 0 (Lemma[min𝟚ab≡₁→a≡₁] r)
 Π-clofun'-dec (T , cs) (A , B) (succ n) r
@@ -245,12 +244,12 @@ We prove this is decreasing by induction.
                           , Π-clofun'-dec (T , cs) (A , B)
 ```
 
-When every cₙ used is the discrete closeness function, the value of Π-clofun
-is equivalent to that of discrete-seq-clofun defined in the previous blog post.
+When every `cₙ` used is the discrete closeness function, the value of `Π-clofun`
+is equivalent to that of `discrete-seq-clofun` defined in the previous blog post.
 We leave this as an exercise for the reader.
 
-Furthermore, we can show that, if every underlying cₙ satisfies the four properties
-of a closeness function, then so does Π-clofun. The details of this are in the
+Furthermore, we can show that, if every underlying `cₙ` satisfies the four properties
+of a closeness function, then so does `Π-clofun`. The details of this are in the
 following hidden module.
 
 ```agda
@@ -387,14 +386,14 @@ module hidden-module where
 Π-is-clofun = hidden-module.Π-is-clofun
 ```
 
-We re-formulate the 'build-up' little lemma from the previous
+We re-formulate the `build-up` little lemma from the previous
 blog post.
-
-This now states that, given any sequence type T : ℕ → 𝓤 of types
-with closeness functions, any two head elements x,y : T 0, any
-two tail elements xs,ys : Π (T ∘ succ), and some δ : ℕ such
-that x and y are (δ+1)-close and xs and ys are δ-close, then
-the sequences (x :: xs) and (y :: ys) are (δ+1)-close.
+  
+This now states that, given any sequence type `T : ℕ → 𝓤` of types
+with closeness functions, any two head elements `x,y : T 0`, any
+two tail elements `xs,ys : Π (T ∘ succ)`, and some `δ : ℕ` such
+that `x` and `y` are `(δ+1)`-close and `xs` and `ys` are `δ`-close, then
+the sequences `(x :: xs)` and `(y :: ys)` are `(δ+1)`-close.
 
 ```agda
 build-up : ((T , cs) : sequence-of-clofun-types 𝓤)
@@ -474,13 +473,13 @@ However, for now, we proceed along the same lines as
 our previous proof; and wait for these subtleties to
 appear.
 
-Firstly, we can still use Lemma 1 in the base case;
+Firstly, we can still use **Lemma 1** in the base case;
 i.e. when the modulus of continuity of the predicate
-being searched is 0. Lemma 1 stated that any uniformly
-continuous discrete predicate p : uc-d-predicate X c,
-for any closeness function c : X × X → ℕ∞, with modulus
-of uniform continuity 0 : ℕ is satisfied by any
-construction of X. This, coupled with the fact that every
+being searched is `0`. **Lemma 1** stated that any uniformly
+continuous discrete predicate `p : uc-d-predicate X c`,
+for any closeness function `c : X × X → ℕ∞`, with modulus
+of uniform continuity `0 : ℕ` is satisfied by any
+construction of `X`. This, coupled with the fact that every
 continuously searchable type is inhabited, provides
 our base case.
 
@@ -495,15 +494,15 @@ Condition-attempt (T , cs) is Is (p , d) 0 ϕ (α , pα)
 -}
 ```
 
-Secondly, we generalise our previous Lemma 2 for our inductive case.
+Secondly, we generalise our previous **Lemma 2** for our inductive case.
 
-Lemma 2 now states that, given any uniformly continuous
-discrete predicate p : uc-d-predicate (Π T) , with
-modulus of uniform continuity (succ δ) : ℕ, we can construct
-the predicate (pₜ x) ≔ (λ xs → x :: xs) : uc-d-predicate (Π T),
-for any given x : T 0, which has modulus of uniform continuity δ : ℕ.
+**Lemma 2** now states that, given any uniformly continuous
+discrete predicate `p : uc-d-predicate (Π T)`, with
+modulus of uniform continuity `(succ δ) : ℕ`, we can construct
+the predicate `(pₜ x) ≔ (λ xs → x :: xs) : uc-d-predicate (Π T)`,
+for any given `x : T 0`, which has modulus of uniform continuity `δ : ℕ`.
 
-Recall that we call (pₜ x) the "tail predicate for p via x".
+Recall that we call `(pₜ x)` the "`tail-predicate` for `p` via `x`".
 
 ```agda
 tail-predicate : {T : ℕ → 𝓤 ̇ }
@@ -525,9 +524,9 @@ tail-predicate-reduce-mod (T , cs) is p x δ ϕ (xs , ys) δ≼cxsys
      (build-up (T , cs) x x xs ys δ (≼-clofun-refl (cs 0) (is 0) (succ δ) x) δ≼cxsys)
 ```
 
-As before, given (pₜ x) for any x : T 0, we can construct
-the "head predicate" pₕ ≔ (λ x → x :: 𝓔xs x) : d-predicate X
-where 𝓔xs x : ℕ → X is the sequence that satisfies (pₜ x).
+As before, given `(pₜ x)` for any `x : T 0`, we can construct
+the "head predicate" `pₕ ≔ (λ x → x :: 𝓔xs x) : d-predicate X`
+where `𝓔xs x : ℕ → X` is the sequence that satisfies `(pₜ x)`.
 
 ```agda
 head-predicate-attempt : ((T , cs) : sequence-of-clofun-types 𝓤)
@@ -547,18 +546,18 @@ head-predicate-attempt (T , cs) is 𝓔s (p , d) δ ϕ
 
 This is where the subtle difference between our Tychonoff
 proof and our previous proof appears. Last time, because the
-domain of our streams -- and hence, the type on which the
-head predicate is tested on -- were only ever discrete types,
+domain of our streams — and hence, the type on which the
+head predicate is tested on — were only ever discrete types,
 we did not have to prove that the head predicate itself is
 continuous. This is because any decidable predicate on a
 discrete type is automatically continuous.
 
-This time, however, the head predicate is defined on (T 0) : 𝓤 ;
+This time, however, the head predicate is defined on `(T 0) : 𝓤`;
 any continuously searchable type. Thus, we must prove that it
-has a modulus of continuity. Specifically, the head predicate
-pₕ : d-predicate (T 0) for a predicate
-p : uc-d-predicate (Π T) (Π-clofun (T , cs))
-should have the same modulus of continuity as p.
+has a modulus of continuity. Specifically, the `head-predicate`
+`pₕ : d-predicate (T 0)` for a predicate
+`p : uc-d-predicate (Π T) (Π-clofun (T , cs))`
+should have the same modulus of continuity as `p`.
 
 ```agda
 postulate lol : {A : 𝓤 ̇ } → A
@@ -572,21 +571,21 @@ head-predicate-same-mod-attempt
   → succ δ is-u-mod-of pr₁ (head-predicate-attempt (T , cs) is 𝓔s (p , d) δ ϕ) on (cs 0)
 head-predicate-same-mod-attempt (T , cs) is 𝓔s (p , d) δ ϕ (x , y) δ≼cxy
  = ϕ (x :: 𝓔xs x , y :: 𝓔xs y)
-     (build-up (T , cs) x y (𝓔xs x) (𝓔xs y) δ δ≼cxy TODO)
+     (build-up (T , cs) x y (𝓔xs x) (𝓔xs y) δ δ≼cxy gap)
   where
     𝓔xs : T 0 → Π (T ∘ succ)
     𝓔xs x = Searcher-attempt (T ∘ succ , cs ∘ succ) (is ∘ succ) (𝓔s ∘ succ)
               (tail-predicate (p , d) x)
               δ (tail-predicate-reduce-mod (T , cs) is (p , d) x δ ϕ)
-    TODO : (δ ↑) ≼ Π-clofun (T ∘ succ , cs ∘ succ) (𝓔xs x , 𝓔xs y)
-    TODO = lol
+    gap : (δ ↑) ≼ Π-clofun (T ∘ succ , cs ∘ succ) (𝓔xs x , 𝓔xs y)
+    gap = lol
 ```
 
-Note that we have a hole: TODO. We will consider this shortly,
+Note that we have a hole labelled `gap`. We will consider this shortly,
 but for now we wish to see if the rest of the proof follows.
 
 We combine the previous two definitions to form
-the full head predicate pₕ : uc-d-predicate (T 0) (cs 0).
+the full head predicate `pₕ : uc-d-predicate (T 0) (cs 0)`.
 
 ```agda
 head-predicate-full-attempt
@@ -602,7 +601,7 @@ head-predicate-full-attempt (T , cs) is 𝓔s (p , d) δ ϕ
  , head-predicate-same-mod-attempt (T , cs) is 𝓔s (p , d) δ ϕ
 ```
 
-We attempt to define the Searcher and Condition as before...
+We attempt to define the `Searcher` and `Condition` as before...
 
 ```agda
 Searcher-attempt  (T , cs) is 𝓔s (p , d) 0        ϕ
@@ -680,28 +679,28 @@ Condition-attempt (T , cs) is Is (p , d) (succ δ) ϕ (α , pα)
 
 So our overall proof works exactly the same for sequences of continuously
 searchable as it did for discrete-sequence types in the last blog post;
-apart from one key difference ─ the hole marked 'TODO'.
+apart from one key difference ─ the `gap` in our proof.
 
 Unlike last time, we have to prove that the head predicate is continuous.
 We avoided this last time by using the fact that every predicate on a discrete
 type is trivially continuous. It turns out, however, that
-filling this hole is not immediately straightforward.
+filling this hole is not straightforward.
 
 ## Agreeable searchers <a name="agreeable"></a>
 
-The hole asks us to prove that (𝓔xs x) , (𝓔xs y) : Π (T ∘ succ)
-─ i.e. the results of the searcher applied to (i) the tail-predicate
-for p via x and (ii) the tail-predicate for p via y ─ are at least
-δ-close.
+The hole asks us to prove that `(𝓔xs x) , (𝓔xs y) : Π (T ∘ succ)`
+─ i.e. the results of the searcher applied to (i) the `tail-predicate`
+for `p` via `x` and (ii) the `tail-predicate` for `p` via `y` ─ are at least
+`δ`-close.
 
 This is a reasonable conjecture. Intuitively, our searchers follow some
 form of search strategy, and we expect the results of the searcher applied
-to two predicates, p₁ and p₂, that agree everywhere, i.e. both p₁(x) ⇒ p₂(y)
-and p₂(x) ⇒ p₁(y)), to be the same.
+to two predicates, `p₁` and `p₂`, that agree everywhere, i.e. both `p₁(x) ⇒ p₂(y)`
+and `p₂(x) ⇒ p₁(y)`), to be the same.
 
 To fill our hole, we do not *require* the results of the searcher in
-such a situation to be *the same* ─ only that they are at least δ-close,
-where δ is a modulus of continuity shared by p₁ and p₂.
+such a situation to be *the same* ─ only that they are at least `δ`-close,
+where `δ` is a modulus of continuity shared by `p₁` and `p₂`.
 
 Effectively, our intuition tells us that the searcher itself is a
 continuous function.
@@ -728,13 +727,13 @@ agreeable {𝓤} {X} c S = ((p₁ , d₁) (p₂ , d₂) : d-predicate X)
                                  , pr₁ (S ((p₂ , d₂) , δ , ϕ₂)))
 ```
 
-As an example, the searcher for 𝟚 is agreeable.
+As an example, the searcher for `𝟚` is agreeable.
 In order to prove this with assistance from the
 type checker, we reformulate the proof that 𝟚
 is continuously searchable. This proof is identical to
 that seen in the previous blog post, but the sub-proof
-𝟚-is-c-searchable' has been brought outside of the
-scope of 𝟚-is-c-searchable.
+`𝟚-is-c-searchable'` has been brought outside of the
+scope of `𝟚-is-c-searchable`.
 
 ```agda
 𝟚-is-c-searchable' : (p : 𝟚 → 𝓤 ̇ )
@@ -754,9 +753,9 @@ scope of 𝟚-is-c-searchable.
 ```
 
 We then show that the searcher as defined above, when given
-two predicates that agree everywhere, always returns the same answer for x₀.
+two predicates that agree everywhere, always returns the same answer for `x₀`.
 
-Therefore, the searcher for 𝟚 is agreeable.
+Therefore, the searcher for `𝟚` is agreeable.
 
 ```agda
 𝟚-is-c-searchable'-agree-eq : ((p₁ , d₁) (p₂ , d₂) : d-predicate 𝟚)
@@ -795,13 +794,13 @@ T yields an agreeable searcher.
 tychonoff : ((T , cs) : sequence-of-clofun-types 𝓤)
           → ((n : ℕ) → is-clofun (cs n))
           → (Is : (n : ℕ) → c-searchable (T n) (cs n))
-          → ((n : ℕ) → agreeable (cs n) (Is n))
+          → ((n : ℕ) → agreeable (cs n) (Is n))       -- New!
           → c-searchable (Π T) (Π-clofun (T , cs))    
 
 Searcher : ((T , cs) : sequence-of-clofun-types 𝓤)
          → ((n : ℕ) → is-clofun (cs n))
          → (Is : (n : ℕ) → c-searchable (T n) (cs n))
-         → ((n : ℕ) → agreeable (cs n) (Is n))
+         → ((n : ℕ) → agreeable (cs n) (Is n))        -- New!
          → ((p , d) : d-predicate (Π T))
          → (δ : ℕ)
          → δ is-u-mod-of p on Π-clofun (T , cs)
@@ -810,7 +809,7 @@ Searcher : ((T , cs) : sequence-of-clofun-types 𝓤)
 Condition : ((T , cs) : sequence-of-clofun-types 𝓤)
           → (is : (n : ℕ) → is-clofun (cs n))
           → (𝓔s : (n : ℕ) → c-searchable (T n) (cs n))
-          → (as : (n : ℕ) → agreeable (cs n) (𝓔s n))  
+          → (as : (n : ℕ) → agreeable (cs n) (𝓔s n))  -- New!
           → ((p , d) : d-predicate (Π T))
           → (δ : ℕ)
           → (ϕ : δ is-u-mod-of p on Π-clofun (T , cs))
@@ -822,10 +821,10 @@ tychonoff (T , cs) is 𝓔s as ((p , d) , δ , ϕ)
 ```
 
 Furthermore, as part of our mutually recursive proof, we
-must prove that the Tychonoff searcher that we build in 'Searcher'
+must prove that the Tychonoff searcher that we build in `Searcher`
 is itself agreeable.
 
-This specifically is what allows us to fill the 'TODO' hole.
+This specifically is what allows us to fill the `gap`.
 
 ```agda
 Agreeable : ((T , cs) : sequence-of-clofun-types 𝓤)
@@ -842,11 +841,11 @@ Agreeable : ((T , cs) : sequence-of-clofun-types 𝓤)
                      , Searcher (T , cs) is 𝓔s as (p₂ , d₂) δ ϕ₂)
 ```
 
-We show that, given two predicates p₁,p₂ : d-prediate (Π T) that
-agree everywhere, some δ : ℕ such that (δ+1) is a modulus of
-uniform continuity for both p₁ and p₂, and two head elements
-x,y : T 0 that are (δ+1)-close, then the tail predicate for p₁
-via x agrees everywhere with the tail predicate for p₂ via y.
+We show that, given two predicates `p₁,p₂ : d-prediate (Π T)` that
+agree everywhere, some `δ : ℕ` such that `(δ+1)` is a modulus of
+uniform continuity for both `p₁` and `p₂`, and two head elements
+`x,y : T 0` that are `(δ+1)`-close, then the `tail-predicate` for `p₁`
+via `x` agrees everywhere with the `tail-predicate` for `p₂` via `y`.
 
 ```agda
 tail-predicate-agree : ((T , cs) : sequence-of-clofun-types 𝓤)
@@ -868,11 +867,12 @@ tail-predicate-agree (T , cs) is (p₁ , d₁) (p₂ , d₂) δ x y δ≼cxy (f 
                     (build-up (T , cs) y x xs xs δ δ≼cyx (δ≼cxsxs xs))
                     (g (y :: xs) pₜ₂xs))
  where
-   δ≼cxsxs = ≼-clofun-refl (Π-clofun (T ∘ succ , cs ∘ succ)) (Π-is-clofun (T ∘ succ , cs ∘ succ) (is ∘ succ)) δ
+   δ≼cxsxs = ≼-clofun-refl (Π-clofun (T ∘ succ , cs ∘ succ))
+                        (Π-is-clofun (T ∘ succ , cs ∘ succ) (is ∘ succ)) δ
    δ≼cyx   = ≼-clofun-sym (cs 0) (is 0) (succ δ) x y δ≼cxy
 ```
 
-We redefine the head predicate, this time filling the TODO hole.
+We redefine the head predicate, this time filling the `gap`.
 
 ```agda
 head-predicate : ((T , cs) : sequence-of-clofun-types 𝓤)
@@ -900,21 +900,21 @@ head-predicate-same-mod
   → succ δ is-u-mod-of pr₁ (head-predicate (T , cs) is 𝓔s as (p , d) δ ϕ) on (cs 0)
 head-predicate-same-mod (T , cs) is 𝓔s as (p , d) δ ϕ (x , y) δ≼cxy
  = ϕ (x :: 𝓔xs x , y :: 𝓔xs y)
-     (build-up (T , cs) x y (𝓔xs x) (𝓔xs y) δ δ≼cxy TODO)
+     (build-up (T , cs) x y (𝓔xs x) (𝓔xs y) δ δ≼cxy gap)
   where
     𝓔xs : T 0 → Π (T ∘ succ)
     𝓔xs x = Searcher (T ∘ succ , cs ∘ succ) (is ∘ succ) (𝓔s ∘ succ) (as ∘ succ)
               (tail-predicate (p , d) x)
               δ (tail-predicate-reduce-mod (T , cs) is (p , d) x δ ϕ)
-    TODO : (δ ↑) ≼ Π-clofun (T ∘ succ , cs ∘ succ) (𝓔xs x , 𝓔xs y)
-    TODO = Agreeable (T ∘ succ , cs ∘ succ) (is ∘ succ) (𝓔s ∘ succ) (as ∘ succ)
-            (tail-predicate (p , d) x)
-            (tail-predicate (p , d) y)
-            δ
-            (tail-predicate-agree (T , cs) is (p , d) (p , d) δ x y δ≼cxy
-              (agree-everywhere-self (p , d)) ϕ ϕ)
-            (tail-predicate-reduce-mod (T , cs) is (p , d) x δ ϕ)
-            (tail-predicate-reduce-mod (T , cs) is (p , d) y δ ϕ)
+    gap : (δ ↑) ≼ Π-clofun (T ∘ succ , cs ∘ succ) (𝓔xs x , 𝓔xs y)
+    gap = Agreeable (T ∘ succ , cs ∘ succ) (is ∘ succ) (𝓔s ∘ succ) (as ∘ succ)
+           (tail-predicate (p , d) x)
+           (tail-predicate (p , d) y)
+           δ
+           (tail-predicate-agree (T , cs) is (p , d) (p , d) δ x y δ≼cxy
+             (agree-everywhere-self (p , d)) ϕ ϕ)
+           (tail-predicate-reduce-mod (T , cs) is (p , d) x δ ϕ)
+           (tail-predicate-reduce-mod (T , cs) is (p , d) y δ ϕ)
 
 head-predicate-full : ((T , cs) : sequence-of-clofun-types 𝓤)
                     → ((n : ℕ) → is-clofun (cs n))
@@ -929,9 +929,9 @@ head-predicate-full (T , cs) is 𝓔s as (p , d) δ ϕ
  , head-predicate-same-mod (T , cs) is 𝓔s as (p , d) δ ϕ
 ```
 
-We also show that the head predicates for p₁ and p₂ -- two
+We also show that the head predicates for `p₁` and `p₂` — two
 predicates that agree everywhere and have shared modulus
-of uniform continuity δ -- themselves agree everywhere.
+of uniform continuity `δ` — themselves agree everywhere.
 
 ```agda
 head-predicate-agree
@@ -974,7 +974,7 @@ head-predicate-agree (T , cs) is 𝓔s as (p₁ , d₁) (p₂ , d₂) δ (f , g)
             (succ δ) (x :: 𝓔xs₁ x) (x :: 𝓔xs₂ x) (γ x)
 ```
 
-We now provide the Searcher and Condition in the same way as before.
+We now provide the `Searcher` and `Condition` in the same way as before.
 
 ```agda
 Searcher  (T , cs) is 𝓔s as (p , d) 0        ϕ
@@ -1096,8 +1096,8 @@ for continuously searchable types.
 
 ## Corollaries <a name="corollaries"></a>
 
-In line with our motivations, we prove that the Cantor type,
-i.e. (ℕ → 𝟚), is searchable. This was proved in the previous blog
+In line with our motivations, we prove that the Cantor type `ℕ → 𝟚`
+is searchable. This was proved in the previous blog
 post, but this time we use our general Tychonoff theorem.
 
 ```agda
@@ -1114,7 +1114,7 @@ post, but this time we use our general Tychonoff theorem.
 ```
 
 Furthermore, we prove something that we couldn't last time:
-that the type of Cantor sequences, i.e. (ℕ → (ℕ → 𝟚)), is
+that the type of Cantor sequences `ℕ → (ℕ → 𝟚)`, is
 continuously searchable.
 
 ```agda

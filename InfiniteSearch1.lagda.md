@@ -1,4 +1,4 @@
-# Search over uniformly continuous decidable predicates on infinite collections of types. (Part 1)
+# Search over uniformly continuous decidable predicates on infinite collections of types. (Part I)
 
 Todd Waugh Ambridge, 15th December 2021
 
@@ -36,9 +36,8 @@ by Martín Escardó with Agda's termination checker turned off.
 {-# OPTIONS --without-K --exact-split --safe #-}
 
 open import SpartanMLTT hiding (decidable)
+open import Two-Properties hiding (zero-is-not-one)
 open import NaturalsOrder
-open import Two-Properties hiding (_≥₂_;zero-is-not-one)
-open import GenericConvergentSequence hiding (ℕ∞;∞;_≼_;∞-maximal)
 
 module InfiniteSearch1 (fe : {𝓤 𝓥 : Universe} → {X : 𝓤 ̇ } {Y : X → 𝓥 ̇ } {f g : Π Y}
                            → f ∼ g → f ≡ g) where
@@ -76,7 +75,7 @@ d-predicate X = Σ p ꞉ (X → 𝓤₀ ̇ ) , everywhere-decidable p
 ```
 
 A type is therefore searchable if, given any decidable predicate, we can construct
-x : X such that, if there is some x₀ : X such that p(x₀), then p(x).
+`x : X` such that, if there is some `x₀ : X` such that `p(x₀)`, then `p(x)`.
 
 ```agda
 searchable : 𝓤 ̇ → (𝓤₀ ⁺) ⊔ 𝓤 ̇
@@ -84,8 +83,8 @@ searchable X = Π (p , _) ꞉ d-predicate X , Σ x ꞉ X , (Σ x₀ ꞉ X , p x�
 ```
 
 The notion of searchability coincides with that of compactness. This can be seen
-fully in the file "CompactTypes.lagda" by Escardó, where the above construction is
-equivalent to that named 'compact∙' in that file.
+fully in the file [CompactTypes](CompactTypes.html) by Escardó, where the above construction is
+equivalent to that named `compact∙` in that file.
 
 The exception to this is that searchability implies inhabitance, whereas the
 empty type `𝟘` is compact.
@@ -95,24 +94,24 @@ searchable-types-are-inhabited : {X : 𝓤 ̇ } → searchable X → X
 searchable-types-are-inhabited {𝓤} {X} S = pr₁ (S trivial-predicate)
  where
    trivial-predicate : d-predicate X
-   trivial-predicate = (λ x → 𝟙) , (λ x → inl *)
+   trivial-predicate = (λ x → 𝟙) , (λ x → inl ⋆)
 ```
 
 Any finite type is trivially searchable, as are finite products and co-products of
 searchable types.
 
-The type of Boolean values 𝟚 ≔ {₀,₁} is searchable by the following argument:
- * Using decidability, we ask if ₁ satisfies the predicate p being searched,
-   i.e. we ask if p(₁) is inhabited.
- * If p(₁), then we return ₁ -- thus, trivially, if there is some x₀ : 𝟚
-   such that p(x₀) then also p(₁).
- * If p(₁) is uninhabited (i.e. we have a function of type ¬ p(₁) ≔ p(₁) → 𝟘)
-   then we return ₀ -- given some x₀ : 𝟚 such that (p x₀) we prove that
-   (p ₀) by case analysis of x₀.
-   *  If x₀ = ₀ then p(₀).
-   *  If x₀ = ₁ then p(₁). This case is absurd, however, as we already showed
-      that (p ₁) is uninhabited. We discard this case using the elimination rule
-      of the empty type 𝟘.
+The type of Boolean values `𝟚 ≔ {₀,₁}` is searchable by the following argument:
+ - Using decidability, we ask if `₁` satisfies the predicate p being searched,
+   i.e. we ask if `p(₁)` is inhabited.
+ - If `p(₁)`, then we return `₁` — thus, trivially, if there is some `x₀ : 𝟚`
+   such that `p(x₀)` then also `p(₁)`.
+ - If `p(₁)` is uninhabited (i.e. we have a function of type `¬ p(₁) ≔ p(₁) → 𝟘`)
+   then we return `₀` — given some x₀ : 𝟚 such that `p(x₀)` we prove that
+   `p(₀)` by case analysis of `x₀`.
+   -  If `x₀ = ₀` then `p(₀)`.
+   -  If `x₀ = ₁` then `p(₁)`. This case is absurd, however, as we already showed
+      that `p ₁` is uninhabited. We discard this case using the elimination rule
+      of the empty type `𝟘`.
 
 ```agda
 𝟚-is-searchable : searchable 𝟚
@@ -182,7 +181,7 @@ over `ℕ → 𝟚`. This is relatively straightforward:
 
 ```agda
 _≡⟦_⟧_ : {X : 𝓤 ̇ } → (ℕ → X) → ℕ → (ℕ → X) → 𝓤 ̇
-α ≡⟦ m ⟧ β = Π k ꞉ ℕ , (k ≤ m → α k ≡ β k)
+α ≡⟦ m ⟧ β = Π k ꞉ ℕ , (k ≤ℕ m → α k ≡ β k)
 
 is-u-continuous-𝟚ᴺ : ((ℕ → 𝟚) → 𝓤₀ ̇ ) → 𝓤₀ ̇
 is-u-continuous-𝟚ᴺ p = Σ m ꞉ ℕ , ((α β : ℕ → 𝟚) → α ≡⟦ m ⟧ β → p α → p β)
@@ -227,14 +226,14 @@ decreasing-binary-seq α = Π n ꞉ ℕ , α n ≥₂ α (succ n)
 ℕ∞ = Σ decreasing-binary-seq
 ```
 
-Any natural number n : ℕ can be mapped to an extended natural k ↑ : ℕ∞,
-which is the sequence with k-many 1s followed by infinitely-many 0s.
+Any natural number `n : ℕ` can be mapped to an extended natural `k ↑ : ℕ∞`,
+which is the sequence with `k`-many `₁`s followed by infinitely-many `₀`s.
 
-  e.g. `5 ↑ ≡ 111110000000...`
+  e.g. `5 ↑ ≡ ₁₁₁₁₁₀₀₀₀₀₀₀ ⋯`
 
 `∞ : ℕ∞` is represented as the sequence with infinitely-many 1s.
 
-  i.e. `∞   ≡ 111111111111...`
+  i.e. `∞   ≡ ₁₁₁₁₁₁₁₁₁₁₁₁ ⋯`
 
 ```agda
 _::_ : {X : 𝓤 ̇ } → X → (ℕ → X) → (ℕ → X)
@@ -257,7 +256,7 @@ succ n ↑ = ₁ :: pr₁ (n ↑) , γ
 ```
 
 Given two extended naturals `α , β : ℕ∞`,
-`α ≼ β` if everywhere `α` has 1s `β` also has 1s.
+`α ≼ β` if everywhere `α` has `₁`s `β` also has `₁`s.
 
 Given any `α : ℕ∞`, clearly `(0 ↑) ≼ α` and `α ≼ ∞`.
 
@@ -272,13 +271,28 @@ _≼_ : ℕ∞ → ℕ∞ → 𝓤₀ ̇
 ∞-maximal α k αₖ≡₁ = refl
 ```
 
-A binary function `c : X × X → ℕ∞` is a *closeness function*
+The minimum of two extended naturals is defined below.
+
+```agda
+min : ℕ∞ → ℕ∞ → ℕ∞
+min α β = (λ n → min𝟚 (pr₁ α n) (pr₁ β n)) , γ
+ where
+   γ : decreasing-binary-seq (λ n → min𝟚 (pr₁ α n) (pr₁ β n))
+   γ n q = Lemma[a≡₁→b≡₁→min𝟚ab≡₁] (pr₂ α n r) (pr₂ β n s)
+    where
+      r : pr₁ α (succ n) ≡ ₁
+      r = Lemma[min𝟚ab≡₁→a≡₁] q
+      s : pr₁ β (succ n) ≡ ₁
+      s = Lemma[min𝟚ab≡₁→b≡₁] q
+```
+
+Now, a binary function `c : X × X → ℕ∞` is a *closeness function*
 (referred to for brevity in the Agda code as a 'clofun')
 if it satisfies the following four properties:
 
  (1) A construction is infinitely close to itself
       `∀ x → c (x , x) ≡ ∞`
-
+ 
  (2) Constructions that are infinite close are equal
       `∀ x y → c (x , y) ≡ ∞ → x ≡ y`
 
@@ -288,7 +302,11 @@ if it satisfies the following four properties:
  (4) Triangle ultrametric property
       `∀ x y z → min (c (x , y)) (c (y , z)) ≼ c (x , z)`
 
-From these properties, we can see clearly the relationship with a metric.
+From these properties, we can determine how closeness functions work.
+Two elements `x,y : X` are `δ`-close (for any `δ : ℕ`) if
+`δ ↑ ≼ c (x , y)`. If `x` and `y` are infinitely close, then they are equal.
+
+We can also clearly see the relationship with a metric.
 In fact, an ultrametric (a metric with a strengthened triangle equality
 property) can be defined using a closeness function easily:
 
@@ -419,7 +437,7 @@ discrete-decidable-seq d α β 0 = Cases (d (α 0) (β 0)) (inl ∘ γₗ) (inr 
    γₗ :    α 0 ≡ β 0  →    α ≡⟦ 0 ⟧ β
    γₗ e 0 _ = e
    γᵣ : ¬ (α 0 ≡ β 0) → ¬ (α ≡⟦ 0 ⟧ β)
-   γᵣ f α≡⟦0⟧β = 𝟘-elim (f (α≡⟦0⟧β 0 *))
+   γᵣ f α≡⟦0⟧β = 𝟘-elim (f (α≡⟦0⟧β 0 ⋆))
 discrete-decidable-seq d α β (succ n)
  = Cases (discrete-decidable-seq d α β n) γ₁ (inr ∘ γ₂)
  where
@@ -477,22 +495,24 @@ proof that the sequence is descending.
 
 Therefore, in order to show that, for `(α , α-dec),(β , β-dec) : ℕ∞`,
 `(α , α-dec) ≡ (β , β-dec)` we need to construct objects of types:
-1. `α     ≡ β`,     for `α,β : ℕ → 𝟚`,
-1. `α-dec ≡ β-dec`, for `α-dec : decreasing-binary-seq α` and, by **1.**,
-                        `β-dec : decreasing-binary-seq α`.
+
+ 1. `α     ≡ β`,     for `α,β : ℕ → 𝟚`,
+ 
+ 2. `α-dec ≡ β-dec`, for `α-dec : decreasing-binary-seq α` and, by **1.**,
+                         `β-dec : decreasing-binary-seq α`.
 
 Constructing an element of **2.** is non-trivial; but, it is a subsingleton.
 
-In homotopy type theory, a type X is called a 'prop' or a 'subsingleton' if,
-for any x,y : X, x ≡ x. This means that the type has at most one element.
+In homotopy type theory, a type `X` is called a 'prop' or a 'subsingleton' if,
+for any `x,y : X`, `x ≡ x`. This means that the type has at most one element.
 
 ```agda
 is-subsingleton : 𝓤 ̇ → 𝓤 ̇
 is-subsingleton X = (x y : X) → x ≡ y
 ```
 
-Given a type family Y : X → 𝓤 ̇ if, for all x : X, Y x is a subsingleton,
-then Π Y is also a subsingleton.
+Given a type family `Y : X → 𝓤` ̇ if, for all `x : X`, `Y x` is a subsingleton,
+then `Π Y` is also a subsingleton.
 
 ```agda
 Π-is-subsingleton : {X : 𝓤 ̇ } {Y : X → 𝓥 ̇ }
@@ -501,16 +521,16 @@ then Π Y is also a subsingleton.
 Π-is-subsingleton Y-is-prop f g = fe (λ x → Y-is-prop x (f x) (g x))
 ```
 
-A type X is called a 'set' if, for any x,y : X, the type x ≡ y is a subsingleton.
+A type `X` is called a 'set' if, for any `x,y : X`, the type `x ≡ y` is a subsingleton.
 
 ```agda
 is-set : 𝓤 ̇ → 𝓤 ̇
 is-set X = (x y : X) → is-subsingleton (x ≡ y)
 ```
 
-𝟚 is a set, and thus the relation _≥₂_ is a prop. This allows us to prove that
-the type decreasing-binary-seq α, for any α : ℕ → 𝟚, is a prop -- thus allowing
-us to construct (2).
+`𝟚` is a set, and thus the relation `_≥₂_` is prop-valued. This allows us to prove
+that the type decreasing-binary-seq α, for any `α : ℕ → 𝟚`, is a prop —
+thus allowing us to construct **2.**.
 
 ```agda
 𝟚-is-set : is-set 𝟚
@@ -606,7 +626,7 @@ is-clofun.ultrametric     (discrete-seq-is-clofun ds) α β η
 We quickly note two corollaries needed for our main result.
 
 Firstly, there is an obvious relationship between the closeness value
-c (α , β) : ℕ∞ and the equality of a prefix of α and β.
+`c (α , β) : ℕ∞` and the equality of a prefix of `α` and `β`.
 
 (Exercises for the reader:)
 
@@ -615,7 +635,8 @@ closeness→equality : {X : 𝓤 ̇ } → (ds : is-discrete X)
                    → (α β : ℕ → X) → (n : ℕ)
                    → (succ n ↑) ≼ discrete-seq-clofun ds (α , β)
                    → α ≡⟦ n ⟧ β
-closeness→equality ds α β n cαβ≼n = γ (discrete-decidable-seq ds α β n) (cαβ≼n n (all-n n))
+closeness→equality ds α β n cαβ≼n
+ = γ (discrete-decidable-seq ds α β n) (cαβ≼n n (all-n n))
  where
    γ : (d : decidable (α ≡⟦ n ⟧ β)) → discrete-seq-c' (α , β) n d ≡ ₁ → α ≡⟦ n ⟧ β
    γ (inl α≡⟦n⟧β) _ = α≡⟦n⟧β
@@ -627,10 +648,11 @@ equality→closeness : {X : 𝓤 ̇ } → (ds : is-discrete X)
                    → (α β : ℕ → X) → (n : ℕ)
                    → α ≡⟦ n ⟧ β
                    → (succ n ↑) ≼ discrete-seq-clofun ds (α , β)
-equality→closeness ds α β n α≡⟦n⟧β k nₖ≡₁ = γ (discrete-decidable-seq ds α β k)
+equality→closeness ds α β n α≡⟦n⟧β k nₖ≡₁
+ = γ (discrete-decidable-seq ds α β k)
  where
-   n≼ : (k n : ℕ) → pr₁ (n ↑) k ≡ ₁ → k < n
-   n≼ 0        (succ n) nₖ≡₁ = *
+   n≼ : (k n : ℕ) → pr₁ (n ↑) k ≡ ₁ → k <ℕ n
+   n≼ 0        (succ n) nₖ≡₁ = ⋆
    n≼ (succ k) (succ n) nₖ≡₁ = n≼ k n nₖ≡₁
    γ : (d : decidable (α ≡⟦ k ⟧ β)) → discrete-seq-c' (α , β) k d ≡ ₁
    γ (inl  α≡⟦k⟧β) = refl
@@ -639,6 +661,7 @@ equality→closeness ds α β n α≡⟦n⟧β k nₖ≡₁ = γ (discrete-decid
 ```
 
 This relationship helps us to show that,
+
       if (     δ ↑) ≼ c (α , β)
     then (succ δ ↑) ≼ c (x :: α , x :: β).
 
@@ -656,7 +679,7 @@ build-up {𝓤} {X} ds xs ys δ δ≼cxsys x
    γ (succ δ) δ≼cxsys (succ k) k≤n = closeness→equality ds xs ys δ δ≼cxsys k k≤n
 ```
 
-Secondly, by function extensionality, α ≡ (head α :: tail α).
+Secondly, by function extensionality, `α ≡ (head α :: tail α)`.
 
 ```agda
 head : {X : 𝓤 ̇ } → (ℕ → X) → X
@@ -678,11 +701,11 @@ Now that we have two examples of closeness functions, we show how they can
 be used to give a definition of uniform continuity that is related to the
 usual ε-δ definition on metric spaces.
 
-A predicate p : predicate X on a type X with closeness function c : X × X → ℕ∞
-is uniformly continuous if there is some δ : ℕ such that, for any x,y : X with
-(δ ↑) ≼ c (x , y), (p y) is inhabited if and only if (p x) is.
+A predicate `p : predicate X` on a type `X` with closeness function `c : X × X → ℕ∞`
+is uniformly continuous if there is some `δ : ℕ` such that, for any `x,y : X` with
+`(δ ↑) ≼ c (x , y)`, `p(y)` is inhabited if and only if `p(x)` is.
 
-We call δ the uniform modulus of p on c.
+We call `δ` the uniform modulus of `p` on `c`.
 
 ```agda
 _is-u-mod-of_on_ : {X : 𝓤 ̇ } → ℕ → predicate X → (X × X → ℕ∞) → 𝓤 ̇ 
@@ -693,8 +716,8 @@ u-continuous {𝓤} {X} c p = Σ δ ꞉ ℕ , δ is-u-mod-of p on c
 ```
 
 This allows us to define the notion of 'continuously searchable' types.
-These are types X with a closeness function c : X × X → ℕ∞ that allow us
-to search any uniformly continuous decidable predicate on X.
+These are types `X` with a closeness function `c : X × X → ℕ∞` that allow us
+to search any uniformly continuous decidable predicate on `X`.
 
 ```agda
 uc-d-predicate : (X : 𝓤 ̇ ) → (X × X → ℕ∞) → (𝓤₀ ⁺) ⊔ 𝓤 ̇
@@ -707,18 +730,17 @@ c-searchable X c = Π ((p , _)  , _) ꞉ uc-d-predicate X c , Σ x₀ ꞉ X , (�
 Of course, any searchable type is trivially continuously searchable on any
 closeness function.
 
-For example, 𝟚 is continuously searchable using the discrete closeness function.
+For example, `𝟚` is continuously searchable using the discrete closeness function.
 
 ```agda
 c-searchable-types-are-inhabited : {X : 𝓤 ̇ } → (c : X × X → ℕ∞) → c-searchable X c → X
 c-searchable-types-are-inhabited {𝓤} {X} c S = pr₁ (S trivial-predicate)
  where
    trivial-predicate : uc-d-predicate X c
-   trivial-predicate = ((λ x → 𝟙) , (λ x → inl *)) , (0 , λ x y _ → *)
+   trivial-predicate = ((λ x → 𝟙) , (λ x → inl ⋆)) , (0 , λ x y _ → ⋆)
 
 searchable→c-searchable : {X : 𝓤 ̇ } → (c : X × X → ℕ∞) → searchable X → c-searchable X c
 searchable→c-searchable c S ((p , d) , δ , ϕ) = S (p , d)
-
 
 𝟚-is-discrete : is-discrete 𝟚
 𝟚-is-discrete ₀ ₀ = inl refl
@@ -736,8 +758,9 @@ closeness function is also searchable: this is because all predicates on discret
 types are uniformly continuous by this closenss function.
 
 ```agda
-all-discrete-predicates-are-continuous : {X : 𝓤 ̇ } → (ds : is-discrete X) → d-predicate X
-                                       → uc-d-predicate X (discrete-clofun ds)
+all-discrete-predicates-are-continuous
+ : {X : 𝓤 ̇ } → (ds : is-discrete X) → d-predicate X
+ → uc-d-predicate X (discrete-clofun ds)
 all-discrete-predicates-are-continuous {𝓤} {X} ds (p , d)
  = (p , d) , (1 , λ (x , y) → γ x y (ds x y))
  where
@@ -755,7 +778,7 @@ c-searchable-discrete→searchable ds S (p , d)
 
 Now we come to the main result for this half.
 
-We wish to show that, for any discrete X, ℕ → X is continuously searchable
+We wish to show that, for any discrete `X`, `ℕ → X` is continuously searchable
 using the discrete-sequence closeness function.
 
 ```agda
@@ -777,13 +800,13 @@ we prove the equivalent statement.
  = →c-searchable' ds (c-searchable-discrete→searchable ds S) (p , d) δ ϕ
 ```
 
-The magic of this proof of course comes from continuity -- we use two simple lemmas.
+The magic of this proof of course comes from continuity — we use two simple lemmas.
 
-Lemma 1.
+**Lemma 1.**
 
-Any uniformly continuous discrete predicate p : uc-d-predicate X c, for
-any closeness function c : X × X → ℕ∞, with modulus of uniform continuity
-0 : ℕ is satisfied by any construction of X.
+Any uniformly continuous discrete predicate `p : uc-d-predicate X c`, for
+any closeness function `c : X × X → ℕ∞`, with modulus of uniform continuity
+`0 : ℕ` is satisfied by any construction of `X`.
 
 ```agda
 0-mod-always-satisfied : {X : 𝓤 ̇ } → (c : X × X → ℕ∞)
@@ -793,18 +816,18 @@ any closeness function c : X × X → ℕ∞, with modulus of uniform continuity
 0-mod-always-satisfied c (p , d) ϕ (x₀ , px₀) x = ϕ (x₀ , x) (λ _ ()) px₀
 
 trivial-predicate : {X : 𝓤 ̇ } → (c : X × X → ℕ∞) → uc-d-predicate X c
-trivial-predicate c = ((λ _ → 𝟙) , (λ _ → inl *)) , (0 , λ x y 0≼cxy → *)
+trivial-predicate c = ((λ _ → 𝟙) , (λ _ → inl ⋆)) , (0 , λ x y 0≼cxy → ⋆)
 ```
 
 Lemma 2.
 
 Given any uniformly continuous discrete predicate
-p : uc-d-predicate (ℕ → X) _, with modulus of uniform continuity
-(succ δ) : ℕ, we can construct the predicate
-(pₜ x) ≔ (λ xs → x :: xs) : uc-d-predicate (ℕ → X) _,
-for any given x : X, which has modulus of uniform continuity δ : ℕ.
+`p : uc-d-predicate (ℕ → X) _`, with modulus of uniform continuity
+`(succ δ) : ℕ`, we can construct the predicate
+`(pₜ x) ≔ (λ xs → x :: xs) : uc-d-predicate (ℕ → X) _`,
+for any given `x : X`, which has modulus of uniform continuity `δ : ℕ`.
 
-We call (pₜ x) the "tail predicate for p via x".
+We call `(pₜ x)` the "`tail-predicate` for `p` via `x`".
 
 ```agda
 tail-predicate : {X : 𝓤 ̇ } → (ds : is-discrete X)
@@ -822,9 +845,9 @@ tail-predicate-reduce-mod {𝓤} {X} ds (p , d) x δ ϕ (xs , ys) δ≼cxsys
  = ϕ (x :: xs , x :: ys) (build-up ds xs ys δ δ≼cxsys x)
 ```
 
-Given (pₜ x) for any x : X, we can construct the
-"head predicate" pₕ ≔ (λ x → x :: 𝓔xs x) : d-predicate X where
-𝓔xs x : ℕ → X is the sequence that satisfies (pₜ x).
+Given `(pₜ x)` for any `x : X`, we can construct the
+"head predicate" `pₕ ≔ (λ x → x :: 𝓔xs x) : d-predicate X` where
+`𝓔xs x : ℕ → X` is the sequence that satisfies `(pₜ x)`.
 
 ```agda
 head-predicate : {X : 𝓤 ̇ } → (ds : is-discrete X) → searchable X
@@ -839,15 +862,15 @@ head-predicate {𝓤} {X} ds S (p , d) δ ϕ
            δ (tail-predicate-reduce-mod ds (p , d) x δ ϕ))
 ```
 
-We now construct the searcher for the type ℕ → X by induction on
+We now construct the searcher for the type `ℕ → X` by induction on
 the modulus of continuity of the predicate being searched.
 
-Recall that in both cases we wish to construct some α : ℕ → X
-such that, if there is α₀ such that p(α₀) then also p(α).
+Recall that in both cases we wish to construct some `α : ℕ → X`
+such that, if there is `α₀` such that `p(α₀)` then also `p(α)`.
 
-When the modulus of continuity is 0, by Lemma 1 we can return
+When the modulus of continuity is `0`, by **Lemma 1** we can return
 any sequence for α. Because X is searchable, it is inhabited by
-some x : X, and so we simply set α ≔ (λ n → x).
+some `x : X`, and so we simply set `α ≔ (λ n → x)`.
 
 ```agda
 →c-searchable' ds S (p , d) 0        ϕ
@@ -859,9 +882,9 @@ some x : X, and so we simply set α ≔ (λ n → x).
    γ = 0-mod-always-satisfied (discrete-seq-clofun ds) (p , d) ϕ
 ```
 
-When the modulus of continuity is (succ δ) : ℕ for some δ : ℕ,
-by Lemma 2 we can construct the tail predicate of p, which has
-modulus of continuity δ : ℕ, for any x : X -- this predicate
+When the modulus of continuity is `(succ δ) : ℕ` for some `δ : ℕ`,
+by **Lemma 2** we can construct the `tail-predicate` of `p`, which has
+modulus of continuity `δ : ℕ`, via any `x : X` — this predicate
 can be searched using the inductive hypothesis.
 
 ```agda
@@ -870,10 +893,10 @@ can be searched using the inductive hypothesis.
   pₜ = λ x' → pr₁ (tail-predicate ds (p , d) x')
 ```
 
-Therefore, we can now search X for a solution to pₕ : d-predicate X,
-the head predicate of p, and use the inductive hypothesis to search
-ℕ → X for a solution to (pₜ x') : uc-d-predicate (ℕ → X) _, the tail
-predicate of p via any x' : X.
+Therefore, we can now search X for a solution to `pₕ : d-predicate X`,
+the `head-predicate` of `p`, and use the inductive hypothesis to search
+`ℕ → X` for a solution to `(pₜ x') : uc-d-predicate (ℕ → X) _`, the tail
+predicate of `p` via any `x' : X`.
 
 ```agda
   S-head = S (head-predicate ds S (p , d) δ ϕ)
@@ -884,8 +907,7 @@ predicate of p via any x' : X.
 
 This gives us two constructions:
 
- 1.  x  : X            s.t. if there is x₀ such that pₕ(x₀)
-                       then also pₕ x,
+ 1.  `x  : X` s.t. if there is `x₀` such that `pₕ(x₀)` then also `pₕ(x)`,
 
 ```agda
   x  : X
@@ -895,8 +917,8 @@ This gives us two constructions:
   γₕ = pr₂ S-head
 ```
 
- 2. 𝓔xs : X → (ℕ → X)  s.t., given any x' : X, if there is xs₀
-                       such that (pₜ x')(xs₀) then also (pₜ x')(𝓔xs x').
+ 2. `𝓔xs : X → (ℕ → X)` s.t., given any `x' : X`, if there is `xs₀`
+                        such that `(pₜ x')(xs₀)` then also `(pₜ x')(𝓔xs x')`.
 
 ```agda
   𝓔xs : X → (ℕ → X)
@@ -905,7 +927,7 @@ This gives us two constructions:
   γₜ  x' = pr₂ (IH-tail x')
 ```
 
-We set α ≔ (x :: 𝓔xs x).
+We set `α ≔ (x :: 𝓔xs x)`.
 ```agda
 
   α = x :: 𝓔xs x
@@ -914,8 +936,8 @@ We set α ≔ (x :: 𝓔xs x).
   γ (α₀ , pα₀) = step₆ where
 ```
 
-If there is some α₀ such that p(α₀), then also (by function
-extensionality) p(x₀ :: xs₀), where x₀ ≔ head α₀ and xs₀ ≔ tail α₀.
+If there is some `α₀` such that `p(α₀)`, then also (by function
+extensionality) `p(x₀ :: xs₀)`, where `x₀ ≔ head α₀` and `xs₀ ≔ tail α₀`.
 
 ```agda
     x₀  = head α₀
@@ -925,8 +947,8 @@ extensionality) p(x₀ :: xs₀), where x₀ ≔ head α₀ and xs₀ ≔ tail �
     step₁ = transport p (head-tail-eta α₀) pα₀
 ```
 
-Therefore, by definition of pₜ, we have (pₜ x₀)(xs₀) and further,
-by construction of 𝓔xs, we also have    (pₜ x₀)(𝓔xs x₀). 
+Therefore, by definition of `pₜ`, we have `(pₜ x₀)(xs₀)` and further,
+by construction of `𝓔xs`, we also have `(pₜ x₀)(𝓔xs x₀)`. 
 
 ```agda
     step₂ : (pₜ x₀) xs₀
@@ -936,9 +958,9 @@ by construction of 𝓔xs, we also have    (pₜ x₀)(𝓔xs x₀).
     step₃ = γₜ x₀ (xs₀ , step₂)
 ```
 
-Note that (pₜ x₀)(𝓔xs x₀) ≡ p(x₀ :: 𝓔xs x₀) ≡ pₕ.
-Therefore, by definition of pₕ, we have pₕ(x₀) and further,
-by construction of x, we also have      pₕ(x).
+Note that `(pₜ x₀)(𝓔xs x₀) ≡ p(x₀ :: 𝓔xs x₀) ≡ pₕ`.
+Therefore, by definition of `pₕ`, we have `pₕ(x₀)` and further,
+by construction of `x`, we also have      `pₕ(x)`.
 
 ```agda
     step₄ : pₕ x₀
@@ -948,7 +970,7 @@ by construction of x, we also have      pₕ(x).
     step₅ = γₕ (x₀ , step₄)
 ```
 
-Note that pₕ(x) ≡ p (x :: 𝓔xs x), giving us our conclusion.
+Note that `pₕ(x) ≡ p (x :: 𝓔xs x)`, giving us our conclusion.
 
 ```agda
     step₆ : p (x :: 𝓔xs x)
@@ -964,9 +986,10 @@ continuously searchable.
 ```
 
 But we still have to prove the full blown Tychonoff theorem using
-closenss functions and continuously searchable types. This will be
-covered in the next part of this series.
-
-Until then, have a think about how we can define a closeness function
-on an infinite series of types T : ℕ → 𝓤 ̇ , where each (T n) : 𝓤 ̇ has
+closeness functions and continuously searchable types.
+Have a think about how we can define a closeness function
+on an infinite series of types `T : ℕ → 𝓤`, where each `(T n) : 𝓤` has
 a closeness function.
+
+Once you've had a think [please click here to read Part II](InfiniteSearch2.html),
+where we formalise the Tychonoff theorem for continuously searchable types.
