@@ -16,7 +16,7 @@ Todd Waugh Ambridge, 15th December 2021
 In this blog post I lay the groundwork necessary to safely formalise the Tychonoff 
 theorem for searchable types.
 
-Beginning with a [small constructive type theory](https://www.cs.bham.ac.uk/~mhe/HoTT-UF-in-Agda-Lecture-Notes/HoTT-UF-Agda.html#mlttinagda),
+Beginning with a [small constructive type theory](SpartanMLTT.html),
 we re-introduce the notion of 'searchable types' [1]. We then introduce the notion 
 of closeness function, our version of a metric in this setting, to allow us to 
 define 'continuously searchable' types. The main result for this first blog post 
@@ -24,8 +24,8 @@ is that discrete-sequence types (types `ℕ → X` where `X` has decidable equal
 are continuously searchable. A corollary to this is that the Cantor space is
 continuously serchable.
 
-In a follow-up blog post, I will use the framework built here to prove the
-Tychonoff theorem safely. This has been [previously formalised](https://www.cs.bham.ac.uk/~mhe/agda/CountableTychonoff.html)
+In [Part II](InfiniteSearch2.html), I use the framework built here to prove the
+Tychonoff theorem safely. This has been [previously formalised](CountableTychonoff.html)
 by Martín Escardó with Agda's termination checker turned off.
 
 **[1]** Escardo, Martin. (2007). Infinite sets that admit fast exhaustive search.
@@ -46,16 +46,16 @@ module InfiniteSearch1 (fe : {𝓤 𝓥 : Universe} → {X : 𝓤 ̇ } {Y : X �
 
 ## Searchable types <a name="searchable"></a>
 
-In [1], a type X is called searchable if, given any predicate p : X → {tt,ff},
-we can find some x : X such that if there is some x₀ such that p(x₀) ≡ tt
-then also p(x) ≡ tt.
+In [1], a type `X` is called searchable if, given any predicate `p : X → {tt,ff}`,
+we can find some `x : X` such that if there is some x₀ such that `p(x₀) ≡ tt`
+then also `p(x) ≡ tt`.
 
 This definition can be written in constructive type theory by using a boolean type
 or, as we do here, using decidable predicates.
 
-A type X is decidable if we can decide whether we have a construction of X or ¬ X.
+A type `X` is decidable if we can decide whether we have a construction of `X` or `¬ X`.
 
-A type family p : X → 𝓤₀ on a type X is decidable if it is everywhere decidable.
+A type family `p : X → 𝓤₀` on a type `X` is decidable if it is everywhere decidable.
 In univalent foundations, we often call a truncated type family a predicate.
 For the purposes of this work, we do not use truncation, and refer to any type
 family as a predicate as they play the role of Boolean-valued predicates in
@@ -88,7 +88,7 @@ fully in the file "CompactTypes.lagda" by Escardó, where the above construction
 equivalent to that named 'compact∙' in that file.
 
 The exception to this is that searchability implies inhabitance, whereas the
-empty type 𝟘 is compact.
+empty type `𝟘` is compact.
 
 ```agda
 searchable-types-are-inhabited : {X : 𝓤 ̇ } → searchable X → X
@@ -126,12 +126,12 @@ The type of Boolean values 𝟚 ≔ {₀,₁} is searchable by the following arg
 ```
 
 Searchability of the natural numbers, however, is a constructive taboo and is
-equivalent to the limited principle of omniscience (LPO).
+equivalent to the limited principle of omniscience (`LPO`).
 
-LPO states that, given any infinite sequence of binary numbers, either all
-are ₀ or we have some n : ℕ such that (f n) ≡ ₁.
+`LPO` states that, given any infinite sequence of binary numbers, either all
+are `₀` or we have some `n : ℕ` such that `(f n) ≡ ₁`.
 
-We define LPO' below, which implies LPO.
+We define `LPO'` below, which implies `LPO`.
 
 ```agda
 LPO  : 𝓤₀ ̇
@@ -163,22 +163,22 @@ LPO-implies-ℕ-searchable L (p , d) = Cases (L (p , d)) left right
 
 Perhaps surprisingly however, there are some infinite types that are searchable.
 The "seemingly impossible functional program", written in Haskell, searches
-predicates on the Cantor type ℕ → 𝟚.
+predicates on the Cantor type `ℕ → 𝟚`.
 
 The magic here is in fact performed by continuity! In various systems for
-constructive mathematics, every predicate p over ℕ → 𝟚 is uniformly
+constructive mathematics, every predicate p over `ℕ → 𝟚` is uniformly
 continuous, and therefore only a finite amount of information is required
-to construct every finite prefix of α₀ : ℕ → 𝟚 satisfying Σ p → p α₀.
+to construct every finite prefix of `α₀ : ℕ → 𝟚` satisfying `Σ p → p α₀`.
 
 However, although the Haskell program presumably terminates given any predicate,
 formalising this program in Agda is more subtle. By implicitly assuming the
 predicate to be searched is uniformly continuous, Agda's termination checker
-fails on the proof that ℕ → 𝟚 is uniformly continuous. This can be seen in the
-file 'CountableTychonoff', which has the termination checker turned off, and
-hence is an 'unsafe' module.
+fails on the proof that `ℕ → 𝟚` is uniformly continuous. This can be seen in the
+file [CountableTychonoff](CountableTychonoff.html), which has the termination checker
+turned off, and hence is an 'unsafe' module.
 
 We instead require a specific definition of a 'uniformly continuous predicate'
-over ℕ → 𝟚. This is relatively straightforward:
+over `ℕ → 𝟚`. This is relatively straightforward:
 
 ```agda
 _≡⟦_⟧_ : {X : 𝓤 ̇ } → (ℕ → X) → ℕ → (ℕ → X) → 𝓤 ̇
@@ -188,31 +188,32 @@ is-u-continuous-𝟚ᴺ : ((ℕ → 𝟚) → 𝓤₀ ̇ ) → 𝓤₀ ̇
 is-u-continuous-𝟚ᴺ p = Σ m ꞉ ℕ , ((α β : ℕ → 𝟚) → α ≡⟦ m ⟧ β → p α → p β)
 ```
 
-Martín Escardó's file [CantorSearch](https://www.cs.bham.ac.uk/~mhe/agda/CantorSearch.html) uses this explicit definition of uniform continuity
-to prove that ℕ → 𝟚 is searchable on such explicitly-defined uniformly
+Martín Escardó's file [CantorSearch](https://www.cs.bham.ac.uk/~mhe/agda/CantorSearch.html)
+uses this explicit definition of uniform continuity
+to prove that `ℕ → 𝟚` is searchable on such explicitly-defined uniformly
 continuous predicates. 
 
 Using the definition of uniform continuity as above, this can be easily
-extended to any type of infinite sequences ℕ → X where X is a discrete type.
+extended to any type of infinite sequences `ℕ → X` where `X` is a discrete type.
 
 However, as searchable types coincide with the concept of compactness, we want
 a full-blown constructive formalisation of the Tychonoff theorem:
 
 ***Theorem (Tychonoff).***
-   Given T : ℕ → 𝓤 is a family of types indexed by the natural numbers, such
-   that every (T n) : 𝓤 is searchable, the type (Π T) : 𝓤 is searchable.
+   Given `T : ℕ → 𝓤` is a family of types indexed by the natural numbers, such
+   that every `(T n) : 𝓤` is searchable, the type `(Π T) : 𝓤` is searchable.
 
-This theorem of course implies that types ℕ → X (where X is discrete) are
+This theorem of course implies that types `ℕ → X` (where X is discrete) are
 searchable; but in order to prove the Tychonoff theorem we need a much more
 general definition of uniform continuity that does not require the types
-(T n) to be disrete.
+`(T n)` to be disrete.
 
 ## Closeness functions and extended naturals <a name="closeness"></a>
 
-We now introduce the idea of a closeness function on a given type X.
-These are binary functions c : X × X → ℕ∞.
+We now introduce the idea of a closeness function on a given type `X`.
+These are binary functions `c : X × X → ℕ∞`.
 
-ℕ∞ is the type of extended natural numbers (i.e. ℕ extended with a point at
+`ℕ∞` is the type of extended natural numbers (i.e. `ℕ` extended with a point at
 infinity), encoded as decreasing infinitary binary sequences.
 
 ```agda
@@ -229,11 +230,11 @@ decreasing-binary-seq α = Π n ꞉ ℕ , α n ≥₂ α (succ n)
 Any natural number n : ℕ can be mapped to an extended natural k ↑ : ℕ∞,
 which is the sequence with k-many 1s followed by infinitely-many 0s.
 
-  e.g. 5 ↑ ≡ 111110000000...
+  e.g. `5 ↑ ≡ 111110000000...`
 
-∞ : ℕ∞ is represented as the sequence with infinitely-many 1s.
+`∞ : ℕ∞` is represented as the sequence with infinitely-many 1s.
 
-  i.e. ∞   ≡ 111111111111...
+  i.e. `∞   ≡ 111111111111...`
 
 ```agda
 _::_ : {X : 𝓤 ̇ } → X → (ℕ → X) → (ℕ → X)
@@ -255,10 +256,10 @@ succ n ↑ = ₁ :: pr₁ (n ↑) , γ
 ∞ = repeat ₁ , (λ n ₁≡₁ → ₁≡₁)
 ```
 
-Given two extended naturals α , β : ℕ∞,
-α ≼ β if everywhere α has 1s β also has 1s.
+Given two extended naturals `α , β : ℕ∞`,
+`α ≼ β` if everywhere `α` has 1s `β` also has 1s.
 
-Given any α : ℕ∞, clearly (0 ↑) ≼ α and α ≼ ∞.
+Given any `α : ℕ∞`, clearly `(0 ↑) ≼ α` and `α ≼ ∞`.
 
 ```agda
 _≼_ : ℕ∞ → ℕ∞ → 𝓤₀ ̇
@@ -271,21 +272,21 @@ _≼_ : ℕ∞ → ℕ∞ → 𝓤₀ ̇
 ∞-maximal α k αₖ≡₁ = refl
 ```
 
-A binary function c : X × X → ℕ∞ is a *closeness function*
+A binary function `c : X × X → ℕ∞` is a *closeness function*
 (referred to for brevity in the Agda code as a 'clofun')
 if it satisfies the following four properties:
 
  (1) A construction is infinitely close to itself
-      ∀ x → c (x , x) ≡ ∞
+      `∀ x → c (x , x) ≡ ∞`
 
  (2) Constructions that are infinite close are equal
-      ∀ x y → c (x , y) ≡ ∞ → x ≡ y
+      `∀ x y → c (x , y) ≡ ∞ → x ≡ y`
 
  (3) Symmetricity
-      ∀ x y → c (x , y) ≡ c (y , x)
+      `∀ x y → c (x , y) ≡ c (y , x)`
 
  (4) Triangle ultrametric property
-      ∀ x y z → min (c (x , y)) (c (y , z)) ≼ c (x , z)
+      `∀ x y z → min (c (x , y)) (c (y , z)) ≼ c (x , z)`
 
 From these properties, we can see clearly the relationship with a metric.
 In fact, an ultrametric (a metric with a strengthened triangle equality
@@ -294,7 +295,7 @@ property) can be defined using a closeness function easily:
     m : X × X → ℝ
     m (x , y) ≡ 1 / (c(x , y) + 1)
 
-Where, by convention, 1 / ∞ ≡ 0.
+Where, by convention, `1 / ∞ ≡ 0`.
 
 ```agda
 record is-clofun {X : 𝓤 ̇ } (c : X × X → ℕ∞) : 𝓤 ̇ where
@@ -331,14 +332,14 @@ discrete-clofun : {X : 𝓤 ̇ } → is-discrete X → (X × X → ℕ∞)
 discrete-clofun d (x , y) = discrete-c' (x , y) (d x y)
 ```
 
-Note that we use the helper function "discrete-c'". This is to allow
+Note that we use the helper function `discrete-c'`. This is to allow
 the Agda synthesizer to recognise when a given construction of the
-type "decidable (x ≡ y)" (for some x,y : X) is constructed as inl x≡y
-(where x≡y : x ≡ y) or inr x≢y (where x≢y : ¬ (x ≡ y)).
+type `decidable (x ≡ y)` (for some `x,y : X`) is constructed as `inl x≡y`
+(where `x≡y : x ≡ y`) or `inr x≢y` (where `x≢y : ¬ (x ≡ y)`).
 
 Using the synthesizer in this way allows us to easily prove the four
 closeness function properties for the helper function, just using
-pattern matching on the given construction of "decidable (x ≡ y)".
+pattern matching on the given construction of `decidable (x ≡ y)`.
 
 ```agda
 discrete-c'-eic : {X : 𝓤 ̇ } → (x : X)
@@ -398,7 +399,7 @@ is-clofun.ultrametric     (discrete-is-clofun ds) x y z
 
 ## Discrete-sequence closeness function <a name="discrete-seq"></a>
 
-The closeness function for a type (ℕ → X) where X is discrete is defined
+The closeness function for a type `(ℕ → X)` where `X` is discrete is defined
 pointwise by cases as follows:
 
     c (α , β) n ≡ ₁,    if x ≡⟦ n ⟧ y,
@@ -406,7 +407,7 @@ pointwise by cases as follows:
 
 We again want to use a helper function to allow us to prove properties
 using the Agda synthesizer just by using pattern matching on the type
-"decidable (α ̄≡⟦ n ⟧ β)".
+`decidable (α ̄≡⟦ n ⟧ β)`.
 
 To do this we first prove the following lemma.
 
@@ -463,8 +464,8 @@ discrete-seq-clofun ds (α , β)
 In order to show that the discrete-sequence closeness function satisfies the four
 necessary properties, we first need a way to show that two extended naturals are equal.
 
-Of course, by function extensionality, two sequences α,β : ℕ → X are equal α ≡ β
-if they are equivalent α ∼ β ≔ Π i ꞉ ℕ , (α i ≡ β i).
+Of course, by function extensionality, two sequences `α,β : ℕ → X` are equal `α ≡ β`
+if they are equivalent `α ∼ β ≔ Π i ꞉ ℕ , (α i ≡ β i)`.
 
 ```agda
 seq-equals : {X : 𝓤 ̇ } {α β : ℕ → X} → α ∼ β → α ≡ β
@@ -474,13 +475,13 @@ seq-equals α∼β = fe α∼β
 However, recall that an extended natural consists of both a binary sequence and a
 proof that the sequence is descending.
 
-Therefore, in order to show that, for (α , α-dec),(β , β-dec) : ℕ∞,
-(α , α-dec) ≡ (β , β-dec) we need to construct objects of types:
-  (1)   α     ≡ β,      for α,β : ℕ → 𝟚),
-  (2)   α-dec ≡ β-dec,  for α-dec : decreasing-binary-seq α and, by (1),
-                            β-dec : decreasing-binary-seq α.
+Therefore, in order to show that, for `(α , α-dec),(β , β-dec) : ℕ∞`,
+`(α , α-dec) ≡ (β , β-dec)` we need to construct objects of types:
+1. `α     ≡ β`,     for `α,β : ℕ → 𝟚`,
+1. `α-dec ≡ β-dec`, for `α-dec : decreasing-binary-seq α` and, by **1.**,
+                        `β-dec : decreasing-binary-seq α`.
 
-Constructing an element of (2) is non-trivial; but, it is a subsingleton.
+Constructing an element of **2.** is non-trivial; but, it is a subsingleton.
 
 In homotopy type theory, a type X is called a 'prop' or a 'subsingleton' if,
 for any x,y : X, x ≡ x. This means that the type has at most one element.
